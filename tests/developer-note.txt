@@ -1,0 +1,21 @@
+developer_note.txt
+
+"I am providing 6 JSON files for the curriculum content. Please note the following critical technical requirements for rendering:
+
+Math Rendering (Critical): The JSON text contains LaTeX-style math tokens (e.g., alpha_bar_t, sqrt(1 - beta), q(x_t | x_0)). You must use a library like KaTeX or MathJax on the frontend to render these as proper mathematical formulas. Do not display raw text like sigma^2.
+
+Parsons Problem UI (Section B):
+
+The scrambled_code_blocks are Python snippets.
+
+The UI must be a Drag-and-Drop interface.
+
+The user must drag the blocks into the correct vertical order.
+
+Your validation logic must compare the user's order against the correct_order array in the JSON.
+
+AI Grading (Section C):
+
+When sending the user's Theory Answer to the Grok API, you must include the ai_grading_rubric object from the JSON in the system prompt.
+
+Prompt Example: 'You are the grader. Here is the question. Here is the Student's Answer. Here is the Rubric (JSON data). Grade the student from -1 to 4 based strictly on this rubric.'"

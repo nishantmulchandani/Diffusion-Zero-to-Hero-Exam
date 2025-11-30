@@ -1,0 +1,660 @@
+{
+  "module_name": "05_Video_Diffusion",
+  "difficulty_level": "Hard",
+  "rendering_note": "Math tokens appear as plain text (e.g., alpha_bar_t, sqrt(beta(t)), mu, sigma^2). Render them with LaTeX/KaTeX/MathJax in the frontend.",
+  "sections": [
+    {
+      "section_id": "A",
+      "section_title": "Conceptual Recall (MCQs)",
+      "total_questions": 20,
+      "marking_scheme": { "correct": 2.0, "incorrect": -0.5 },
+      "questions": [
+        {
+          "id": "q1",
+          "type": "mcq",
+          "question_text": "A 3D convolution with kernel (k_t,k_h,k_w) on input (B,C,T,H,W) primarily mixes:",
+          "code_snippet": null,
+          "options": [
+            "A) Only spatial dimensions",
+            "B) Only temporal dimension",
+            "C) Temporal and spatial neighborhoods jointly",
+            "D) Channels only"
+          ],
+          "correct_option": "C",
+          "explanation": "3D kernel spans time and space simultaneously."
+        },
+        {
+          "id": "q2",
+          "type": "mcq",
+          "question_text": "Temporal attention complexity for sequence length T and spatial tokens S is:",
+          "code_snippet": null,
+          "options": [
+            "A) O(S^2)",
+            "B) O(T^2 S)",
+            "C) O(T S^2)",
+            "D) O(T S)"
+          ],
+          "correct_option": "B",
+          "explanation": "Full temporal attention per spatial position costs quadratic in T."
+        },
+        {
+          "id": "q3",
+          "type": "mcq",
+          "question_text": "Video latent grids often flatten spatial tokens then treat frames as:",
+          "code_snippet": null,
+          "options": [
+            "A) Separate batches",
+            "B) Temporal dimension stacked into sequence",
+            "C) Channels",
+            "D) Kernel weights"
+          ],
+          "correct_option": "B",
+          "explanation": "Tokens include temporal index to allow attention across frames."
+        },
+        {
+          "id": "q4",
+          "type": "mcq",
+          "question_text": "Motion bucket conditioning encodes:",
+          "code_snippet": null,
+          "options": [
+            "A) Noise schedule",
+            "B) Discretized optical flow magnitude/direction",
+            "C) Patch size",
+            "D) Decoder depth"
+          ],
+          "correct_option": "B",
+          "explanation": "Buckets quantize motion strength to guide temporal consistency."
+        },
+        {
+          "id": "q5",
+          "type": "mcq",
+          "question_text": "RoPE extended to time encodes temporal positions by:",
+          "code_snippet": null,
+          "options": [
+            "A) Adding constant bias",
+            "B) Applying rotary phases using temporal index",
+            "C) Scaling value vectors",
+            "D) Shuffling frames"
+          ],
+          "correct_option": "B",
+          "explanation": "Temporal RoPE rotates Q/K using temporal angles."
+        },
+        {
+          "id": "q6",
+          "type": "mcq",
+          "question_text": "3D conv stride (1,2,2) downscales:",
+          "code_snippet": null,
+          "options": [
+            "A) Time only",
+            "B) Space only",
+            "C) Time and space",
+            "D) Channels"
+          ],
+          "correct_option": "B",
+          "explanation": "Temporal stride 1 keeps T; spatial stride 2 halves H,W."
+        },
+        {
+          "id": "q7",
+          "type": "mcq",
+          "question_text": "Temporal attention within each frame is equivalent to:",
+          "code_snippet": null,
+          "options": [
+            "A) Spatial self-attention",
+            "B) Cross-attention",
+            "C) Channel mixing",
+            "D) MLP"
+          ],
+          "correct_option": "A",
+          "explanation": "Per-frame self-attention operates over spatial tokens only."
+        },
+        {
+          "id": "q8",
+          "type": "mcq",
+          "question_text": "To keep compute manageable, many video diffusion models:",
+          "code_snippet": null,
+          "options": [
+            "A) Increase resolution",
+            "B) Factor attention into spatial then temporal passes",
+            "C) Use no attention",
+            "D) Remove VAE"
+          ],
+          "correct_option": "B",
+          "explanation": "Factorized attention splits spatial/temporal to reduce quadratic cost."
+        },
+        {
+          "id": "q9",
+          "type": "mcq",
+          "question_text": "Conditioning on first frame for video generation often uses:",
+          "code_snippet": null,
+          "options": [
+            "A) Treating first frame as text",
+            "B) Cross-attention from video latents to encoded first-frame latents",
+            "C) Adding random noise",
+            "D) Removing temporal layers"
+          ],
+          "correct_option": "B",
+          "explanation": "Encoder extracts tokens from first frame to guide remaining frames."
+        },
+        {
+          "id": "q10",
+          "type": "mcq",
+          "question_text": "Temporal RoPE frequency base often matches:",
+          "code_snippet": null,
+          "options": [
+            "A) Spatial base",
+            "B) Frame rate",
+            "C) Patch size",
+            "D) Channel count"
+          ],
+          "correct_option": "A",
+          "explanation": "Shared base keeps consistent scaling; frequency multipliers encode positions."
+        },
+        {
+          "id": "q11",
+          "type": "mcq",
+          "question_text": "Optical flow supervision can regularize video diffusion by:",
+          "code_snippet": null,
+          "options": [
+            "A) Increasing noise",
+            "B) Penalizing motion inconsistency across frames",
+            "C) Removing attention",
+            "D) Enforcing pixel-level identity"
+          ],
+          "correct_option": "B",
+          "explanation": "Flow encourages coherent motion trajectories."
+        },
+        {
+          "id": "q12",
+          "type": "mcq",
+          "question_text": "Temporal downsampling by factor 2 reduces token count by:",
+          "code_snippet": null,
+          "options": [
+            "A) 0.5x",
+            "B) 2x",
+            "C) 4x",
+            "D) 8x"
+          ],
+          "correct_option": "B",
+          "explanation": "Halving frames halves temporal tokens."
+        },
+        {
+          "id": "q13",
+          "type": "mcq",
+          "question_text": "Motion bucket embeddings are typically added via:",
+          "code_snippet": null,
+          "options": [
+            "A) Bias to timestep embedding",
+            "B) Cross-attention only",
+            "C) Multiplying positional embeddings",
+            "D) Replacing patch tokens"
+          ],
+          "correct_option": "A",
+          "explanation": "Bucket index is embedded and fused with time/conditioning embeddings."
+        },
+        {
+          "id": "q14",
+          "type": "mcq",
+          "question_text": "Which scheduling strategy helps long videos without drifting quality?",
+          "code_snippet": null,
+          "options": [
+            "A) Use fewer steps",
+            "B) Use higher noise at later frames",
+            "C) Apply sliding-window conditioning and keyframe anchors",
+            "D) Remove positional encodings"
+          ],
+          "correct_option": "C",
+          "explanation": "Anchoring windows maintains temporal coherence over long horizons."
+        },
+        {
+          "id": "q15",
+          "type": "mcq",
+          "question_text": "Channel-first 3D conv expects input layout:",
+          "code_snippet": null,
+          "options": [
+            "A) (T,B,C,H,W)",
+            "B) (B,C,T,H,W)",
+            "C) (B,T,H,W,C)",
+            "D) (H,W,C,B,T)"
+          ],
+          "correct_option": "B",
+          "explanation": "Standard PyTorch Conv3d uses (B,C,T,H,W)."
+        },
+        {
+          "id": "q16",
+          "type": "mcq",
+          "question_text": "Temporal attention for each spatial position uses queries/keys/values shaped:",
+          "code_snippet": null,
+          "options": [
+            "A) (B, T, d)",
+            "B) (B, H*W, d)",
+            "C) (T, B, d)",
+            "D) (B, d, T)"
+          ],
+          "correct_option": "A",
+          "explanation": "Temporal attention processes sequence over frames per spatial token."
+        },
+        {
+          "id": "q17",
+          "type": "mcq",
+          "question_text": "Video VAE encoders often use temporal stride 1 early to:",
+          "code_snippet": null,
+          "options": [
+            "A) Aggressively downsample time",
+            "B) Preserve motion cues before later temporal pooling",
+            "C) Increase channels",
+            "D) Remove temporal dimension"
+          ],
+          "correct_option": "B",
+          "explanation": "Early layers keep temporal fidelity before later compression."
+        },
+        {
+          "id": "q18",
+          "type": "mcq",
+          "question_text": "Temporal positional encoding periodicity should cover:",
+          "code_snippet": null,
+          "options": [
+            "A) Single frame",
+            "B) Maximum sequence length T_max",
+            "C) Patch size",
+            "D) Channel count"
+          ],
+          "correct_option": "B",
+          "explanation": "Frequencies must represent full temporal span."
+        },
+        {
+          "id": "q19",
+          "type": "mcq",
+          "question_text": "Why mix 3D convs and temporal attention in video diffusion?",
+          "code_snippet": null,
+          "options": [
+            "A) To avoid positional encodings",
+            "B) Convs capture local motion; attention captures long-range temporal dependencies",
+            "C) To reduce parameters",
+            "D) To freeze backbone"
+          ],
+          "correct_option": "B",
+          "explanation": "Hybrid handles both local and global motion patterns."
+        },
+        {
+          "id": "q20",
+          "type": "mcq",
+          "question_text": "Conditioning on camera trajectory often uses:",
+          "code_snippet": null,
+          "options": [
+            "A) Extra noise channels",
+            "B) Positional embeddings derived from camera poses concatenated to tokens",
+            "C) Removing temporal layers",
+            "D) Scaling betas"
+          ],
+          "correct_option": "B",
+          "explanation": "Pose encodings provide view-dependent guidance."
+        }
+      ]
+    },
+    {
+      "section_id": "B",
+      "section_title": "Logic & Implementation Puzzles",
+      "total_questions": 20,
+      "marking_scheme": { "correct": 2.0, "incorrect": -0.5 },
+      "questions": [
+        {
+          "id": "q21",
+          "type": "parsons_problem",
+          "question_text": "Arrange to apply temporal attention over T frames for each spatial token.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "q = q.reshape(B, H*W, T, d)" },
+            { "id": "b2", "text": "attn = (q @ k.transpose(-2,-1)) * scale" },
+            { "id": "b3", "text": "out = attn @ v" },
+            { "id": "b4", "text": "out = out.reshape(B, H*W, T, d)" },
+            { "id": "b5", "text": "def temporal_attn(q, k, v, H, W, T, scale):" },
+            { "id": "b6", "text": "attn = attn.softmax(-1)" },
+            { "id": "b7", "text": "return out" }
+          ],
+          "correct_order": ["b5", "b1", "b2", "b6", "b3", "b4", "b7"],
+          "explanation": "Reshape to temporal sequences, attend across time, reshape back."
+        },
+        {
+          "id": "q22",
+          "type": "parsons_problem",
+          "question_text": "Arrange to inject motion bucket embedding into timestep embedding.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "emb = t_emb + motion_emb(mb_ids)" },
+            { "id": "b2", "text": "def fuse_motion(t_emb, motion_emb, mb_ids):" },
+            { "id": "b3", "text": "return emb" }
+          ],
+          "correct_order": ["b2", "b1", "b3"],
+          "explanation": "Additive fusion of motion bucket embedding into time embedding."
+        },
+        {
+          "id": "q23",
+          "type": "parsons_problem",
+          "question_text": "Arrange to apply 3D convolution with stride (1,2,2).",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "conv = nn.Conv3d(C, C_out, kernel_size=3, stride=(1,2,2), padding=1)" },
+            { "id": "b2", "text": "return conv(x)" },
+            { "id": "b3", "text": "def downsample_spatial(x, C_out):" }
+          ],
+          "correct_order": ["b3", "b1", "b2"],
+          "explanation": "Stride only in spatial dims halves H,W."
+        },
+        {
+          "id": "q24",
+          "type": "parsons_problem",
+          "question_text": "Arrange to add temporal rotary embeddings to Q,K.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "q_t, k_t = apply_rope_time(q, k, time_freqs)" },
+            { "id": "b2", "text": "def add_temporal_rope(q, k, time_freqs):" },
+            { "id": "b3", "text": "return q_t, k_t" }
+          ],
+          "correct_order": ["b2", "b1", "b3"],
+          "explanation": "Apply RoPE over temporal dimension."
+        },
+        {
+          "id": "q25",
+          "type": "parsons_problem",
+          "question_text": "Arrange sliding-window conditioning on previous K frames.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "cond_tokens = encoder(frames[:, :, t-K:t])" },
+            { "id": "b2", "text": "out = cross_attn(latent_tokens, cond_tokens)" },
+            { "id": "b3", "text": "def window_cond(latent_tokens, frames, t, K):" },
+            { "id": "b4", "text": "return out" }
+          ],
+          "correct_order": ["b3", "b1", "b2", "b4"],
+          "explanation": "Encode window of past frames, then cross-attend."
+        },
+        {
+          "id": "q26",
+          "type": "parsons_problem",
+          "question_text": "Arrange to reshape (B,C,T,H,W) to (B,T,H*W,C) for attention.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "x = x.permute(0,2,3,4,1)" },
+            { "id": "b2", "text": "x = x.reshape(B, T, H*W, C)" },
+            { "id": "b3", "text": "def flatten_spatial(x):" },
+            { "id": "b4", "text": "B, C, T, H, W = x.shape" },
+            { "id": "b5", "text": "return x" }
+          ],
+          "correct_order": ["b3", "b4", "b1", "b2", "b5"],
+          "explanation": "Move channels last then flatten spatial dimensions."
+        },
+        {
+          "id": "q27",
+          "type": "parsons_problem",
+          "question_text": "Arrange to upsample video latents temporally by repeat.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "x = x.repeat_interleave(2, dim=2)" },
+            { "id": "b2", "text": "def upsample_time(x):" },
+            { "id": "b3", "text": "return x" }
+          ],
+          "correct_order": ["b2", "b1", "b3"],
+          "explanation": "Temporal repeat doubles frame count."
+        },
+        {
+          "id": "q28",
+          "type": "parsons_problem",
+          "question_text": "Arrange to compute temporal positional indices.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "pos = torch.arange(T, device=x.device)" },
+            { "id": "b2", "text": "pos = pos[None, :, None].expand(B, T, 1)" },
+            { "id": "b3", "text": "def time_positions(B, T, x):" },
+            { "id": "b4", "text": "return pos" }
+          ],
+          "correct_order": ["b3", "b1", "b2", "b4"],
+          "explanation": "Create broadcastable temporal indices."
+        },
+        {
+          "id": "q29",
+          "type": "parsons_problem",
+          "question_text": "Arrange to compute motion magnitude buckets from flow.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "mag = flow.norm(dim=1)" },
+            { "id": "b2", "text": "bucket = torch.bucketize(mag, boundaries)" },
+            { "id": "b3", "text": "def motion_bucket(flow, boundaries):" },
+            { "id": "b4", "text": "return bucket" }
+          ],
+          "correct_order": ["b3", "b1", "b2", "b4"],
+          "explanation": "Norm of flow vectors then bucketize by thresholds."
+        },
+        {
+          "id": "q30",
+          "type": "parsons_problem",
+          "question_text": "Arrange to merge temporal and spatial RoPE frequencies.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "freqs = torch.cat([freqs_t, freqs_h, freqs_w], dim=-2)" },
+            { "id": "b2", "text": "def merge_freqs(freqs_t, freqs_h, freqs_w):" },
+            { "id": "b3", "text": "return freqs" }
+          ],
+          "correct_order": ["b2", "b1", "b3"],
+          "explanation": "Concatenate frequency matrices for combined rotation."
+        },
+        {
+          "id": "q31",
+          "type": "fill_in_blank",
+          "question_text": "3D Conv input shape for PyTorch is (B, C, ______, H, W).",
+          "correct_answer": "T",
+          "explanation": "Temporal dimension third."
+        },
+        {
+          "id": "q32",
+          "type": "fill_in_blank",
+          "question_text": "Factorized attention reduces cost by separating spatial and ______ passes.",
+          "correct_answer": "temporal",
+          "explanation": "Compute attention along one dimension at a time."
+        },
+        {
+          "id": "q33",
+          "type": "fill_in_blank",
+          "question_text": "Temporal RoPE rotates Q/K using frequencies based on frame ______.",
+          "correct_answer": "index",
+          "explanation": "Positions map to rotation angles."
+        },
+        {
+          "id": "q34",
+          "type": "fill_in_blank",
+          "question_text": "Motion buckets quantize flow magnitudes into discrete ______.",
+          "correct_answer": "bins",
+          "explanation": "Bucketization maps continuous motion to categories."
+        },
+        {
+          "id": "q35",
+          "type": "fill_in_blank",
+          "question_text": "Temporal stride 2 halves the number of ______ tokens.",
+          "correct_answer": "frame",
+          "explanation": "Halved frames -> half temporal tokens."
+        },
+        {
+          "id": "q36",
+          "type": "fill_in_blank",
+          "question_text": "Sliding-window conditioning uses past K frames as a ______ for current prediction.",
+          "correct_answer": "context",
+          "explanation": "Window provides conditioning information."
+        },
+        {
+          "id": "q37",
+          "type": "fill_in_blank",
+          "question_text": "Temporal attention logits are scaled by 1/sqrt( ______ ).",
+          "correct_answer": "d_k",
+          "explanation": "Same scaling as spatial attention."
+        },
+        {
+          "id": "q38",
+          "type": "fill_in_blank",
+          "question_text": "Optical flow magnitude is computed as L2 norm over the ______ components.",
+          "correct_answer": "flow vector",
+          "explanation": "Norm over (u,v) (and possibly w) channels."
+        },
+        {
+          "id": "q39",
+          "type": "fill_in_blank",
+          "question_text": "Camera pose conditioning is often added to token embeddings via ______ addition.",
+          "correct_answer": "positional/conditioning",
+          "explanation": "Pose embedding is added to tokens."
+        },
+        {
+          "id": "q40",
+          "type": "fill_in_blank",
+          "question_text": "Temporal positional encodings require maximum length parameter ______.",
+          "correct_answer": "T_max",
+          "explanation": "Defines supported frame count."
+        }
+      ]
+    },
+    {
+      "section_id": "C",
+      "section_title": "Deep Theory & Coding",
+      "total_questions": 10,
+      "marking_scheme": { "correct": 4.0, "incorrect": -1.0 },
+      "questions": [
+        {
+          "id": "q41",
+          "type": "theory_open_ended",
+          "question_text": "Compare factorized spatial-temporal attention to full joint attention for video diffusion in terms of complexity and modeling capacity.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Full attention O((T S)^2) vs factorized O(T^2 S + S^2 T)",
+              "Factorized reduces compute/memory",
+              "Potential loss of joint interactions",
+              "Empirical trade-off between efficiency and fidelity"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q42",
+          "type": "theory_open_ended",
+          "question_text": "Explain how motion bucket conditioning guides temporal coherence and what failure modes occur with mis-specified buckets.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Buckets encode motion strength/direction",
+              "Conditioning modulates denoiser toward target motion",
+              "Mis-specified buckets cause jitter or frozen frames",
+              "Too coarse buckets reduce controllability"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q43",
+          "type": "theory_open_ended",
+          "question_text": "Discuss why 3D convolutions alone struggle with long-range temporal consistency and how attention layers mitigate this.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "3D conv receptive field limited by depth",
+              "Long-range dependencies require many layers",
+              "Attention provides global temporal context",
+              "Hybrid design leverages local+global cues"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q44",
+          "type": "theory_open_ended",
+          "question_text": "Derive shape transformations from (B,C,T,H,W) through patchifying into tokens and back.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Patchify spatial dims -> N = (H/p)(W/p) tokens per frame",
+              "Sequence length T*N with dim C*p*p",
+              "Projection to d_model",
+              "De-patchify reshapes back to (B,C,T,H,W)"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q45",
+          "type": "theory_open_ended",
+          "question_text": "Explain temporal RoPE and its benefits over absolute temporal embeddings for variable video lengths.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "RoPE encodes relative temporal offsets via rotations",
+              "Generalizes beyond training length",
+              "Avoids interpolation artifacts of absolute embeddings",
+              "Improves alignment across variable T"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q46",
+          "type": "theory_open_ended",
+          "question_text": "Propose a method to integrate optical flow supervision into the diffusion loss and discuss expected improvements.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Add auxiliary flow prediction head or flow consistency loss",
+              "Compute flow between consecutive predicted frames",
+              "Weight auxiliary loss with lambda",
+              "Expect smoother motion and fewer temporal artifacts"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q47",
+          "type": "theory_open_ended",
+          "question_text": "Analyze memory bottlenecks for full-video attention and suggest two mitigation strategies.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Attention scales with T*S tokens",
+              "Use factorized attention or windowed attention",
+              "Apply mixed-precision/checkpointing",
+              "Reduce resolution or temporal length"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q48",
+          "type": "theory_open_ended",
+          "question_text": "Explain how first-frame conditioning can be incorporated via cross-attention and what risks occur if the encoder drifts.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Encode first frame to tokens",
+              "Use as keys/values for cross-attention with video latents",
+              "Drift in encoder reduces alignment causing inconsistencies",
+              "Regularize encoder or share weights with decoder VAE"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q49",
+          "type": "theory_open_ended",
+          "question_text": "Discuss trade-offs between temporal stride choices in video VAEs and downstream diffusion quality.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Higher stride compresses time -> less motion fidelity",
+              "Lower stride preserves detail but increases compute",
+              "Decoder must reconstruct temporal dynamics",
+              "Choose stride based on target frame rate/length"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q50",
+          "type": "theory_open_ended",
+          "question_text": "Evaluate when sliding-window conditioning may cause temporal seams and how to alleviate them.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Window boundaries can introduce inconsistencies",
+              "Use overlapping windows with blending",
+              "Keyframe anchors or recurrent state can smooth transitions",
+              "Global attention intermittently to align segments"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        }
+      ]
+    }
+  ]
+}

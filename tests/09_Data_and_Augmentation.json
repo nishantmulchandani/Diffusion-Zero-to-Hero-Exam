@@ -1,0 +1,657 @@
+{
+  "module_name": "10_Data_and_Augmentation",
+  "difficulty_level": "Hard",
+  "rendering_note": "Math tokens appear as plain text (e.g., alpha_bar_t, sqrt(beta(t)), mu, sigma^2). Render them with LaTeX/KaTeX/MathJax in the frontend.",
+  "sections": [
+    {
+      "section_id": "A",
+      "section_title": "Conceptual Recall (MCQs)",
+      "total_questions": 20,
+      "marking_scheme": { "correct": 2.0, "incorrect": -0.5 },
+      "questions": [
+        {
+          "id": "q1",
+          "type": "mcq",
+          "question_text": "Aspect-ratio bucketing is used to:",
+          "code_snippet": null,
+          "options": [
+            "A) Increase batch size only",
+            "B) Group images of similar H/W to minimize padding waste",
+            "C) Force square crops always",
+            "D) Remove captions"
+          ],
+          "correct_option": "B",
+          "explanation": "Buckets reduce padding and distortions by batching similar shapes."
+        },
+        {
+          "id": "q2",
+          "type": "mcq",
+          "question_text": "Caption dropout during training:",
+          "code_snippet": null,
+          "options": [
+            "A) Increases VRAM",
+            "B) Teaches unconditional behavior and robustness to weak captions",
+            "C) Removes CFG",
+            "D) Only applies to images without captions"
+          ],
+          "correct_option": "B",
+          "explanation": "Dropping captions is analogous to CFG training and robustness."
+        },
+        {
+          "id": "q3",
+          "type": "mcq",
+          "question_text": "Center cropping vs random cropping difference:",
+          "code_snippet": null,
+          "options": [
+            "A) Center introduces more augmentation",
+            "B) Random improves diversity; center is deterministic and may bias composition",
+            "C) Random cropping reduces data",
+            "D) Center cropping increases resolution"
+          ],
+          "correct_option": "B",
+          "explanation": "Random crops add diversity; center can bias towards centered objects."
+        },
+        {
+          "id": "q4",
+          "type": "mcq",
+          "question_text": "Tokenization truncation occurs when:",
+          "code_snippet": null,
+          "options": [
+            "A) Caption length exceeds encoder max tokens",
+            "B) Image is too small",
+            "C) Beta too high",
+            "D) SNR is low"
+          ],
+          "correct_option": "A",
+          "explanation": "Text encoder has fixed max length; extra tokens are dropped."
+        },
+        {
+          "id": "q5",
+          "type": "mcq",
+          "question_text": "Why normalize pixel values to [-1,1] before VAE encode?",
+          "code_snippet": null,
+          "options": [
+            "A) To align with VAE training distribution",
+            "B) To reduce VRAM",
+            "C) To remove channels",
+            "D) To help tokenization"
+          ],
+          "correct_option": "A",
+          "explanation": "VAE expects normalized inputs; mismatched scales hurt reconstructions."
+        },
+        {
+          "id": "q6",
+          "type": "mcq",
+          "question_text": "When batching variable-resolution images without bucketing:",
+          "code_snippet": null,
+          "options": [
+            "A) All images must be the same size via pad/resize",
+            "B) It is impossible to train",
+            "C) CFG is disabled",
+            "D) Beta schedule changes"
+          ],
+          "correct_option": "A",
+          "explanation": "Batch tensors must align; pad/resize increases waste."
+        },
+        {
+          "id": "q7",
+          "type": "mcq",
+          "question_text": "Auto-caption noise (inaccurate captions) can cause:",
+          "code_snippet": null,
+          "options": [
+            "A) Better alignment",
+            "B) Misalignment of text-image mapping and weaker conditioning",
+            "C) Faster sampling",
+            "D) More VRAM"
+          ],
+          "correct_option": "B",
+          "explanation": "Noisy captions degrade text-condition alignment."
+        },
+        {
+          "id": "q8",
+          "type": "mcq",
+          "question_text": "Color jitter augmentation mainly helps with:",
+          "code_snippet": null,
+          "options": [
+            "A) Reducing beta",
+            "B) Robustness to lighting/color shifts",
+            "C) Text encoder speed",
+            "D) VAE compression"
+          ],
+          "correct_option": "B",
+          "explanation": "Color jitter broadens appearance distribution."
+        },
+        {
+          "id": "q9",
+          "type": "mcq",
+          "question_text": "Resolution conditioning tokens (bucketing id) are used to:",
+          "code_snippet": null,
+          "options": [
+            "A) Encode SNR",
+            "B) Inform model of current aspect/scale to improve generalization",
+            "C) Replace timestep embeddings",
+            "D) Increase beta"
+          ],
+          "correct_option": "B",
+          "explanation": "Embedding bucket id helps model adapt to resolution differences."
+        },
+        {
+          "id": "q10",
+          "type": "mcq",
+          "question_text": "Dynamic thresholding on decoded images at training time is usually:",
+          "code_snippet": null,
+          "options": [
+            "A) Required",
+            "B) Avoided; usually applied at inference for stability",
+            "C) Used to change betas",
+            "D) For token length"
+          ],
+          "correct_option": "B",
+          "explanation": "Training uses fixed scaling; dynamic thresholding is inference stabilization."
+        },
+        {
+          "id": "q11",
+          "type": "mcq",
+          "question_text": "Caption min-length filtering prevents:",
+          "code_snippet": null,
+          "options": [
+            "A) Excessive detail",
+            "B) Empty or trivial captions that provide no conditioning signal",
+            "C) Overfitting",
+            "D) Tokenization errors"
+          ],
+          "correct_option": "B",
+          "explanation": "Removing empty captions keeps conditioning meaningful unless unconditional training is intended."
+        },
+        {
+          "id": "q12",
+          "type": "mcq",
+          "question_text": "Random horizontal flip is typically safe for:",
+          "code_snippet": null,
+          "options": [
+            "A) Text images",
+            "B) Natural scenes without directional semantics",
+            "C) Faces with asymmetric attributes",
+            "D) Text rendering"
+          ],
+          "correct_option": "B",
+          "explanation": "Flipping is fine unless orientation semantics matter."
+        },
+        {
+          "id": "q13",
+          "type": "mcq",
+          "question_text": "Why might you avoid heavy blur augmentations?",
+          "code_snippet": null,
+          "options": [
+            "A) They increase VRAM",
+            "B) They destroy high-frequency details the model should learn",
+            "C) They slow tokenization",
+            "D) They change betas"
+          ],
+          "correct_option": "B",
+          "explanation": "Excess blur removes detail and hurts generation sharpness."
+        },
+        {
+          "id": "q14",
+          "type": "mcq",
+          "question_text": "During web-scale training, duplicate detection helps because:",
+          "code_snippet": null,
+          "options": [
+            "A) It increases batch size",
+            "B) It reduces memorization and overrepresentation of repeated samples",
+            "C) It speeds tokenization",
+            "D) It sets beta to zero"
+          ],
+          "correct_option": "B",
+          "explanation": "Removing duplicates improves diversity and reduces overfitting."
+        },
+        {
+          "id": "q15",
+          "type": "mcq",
+          "question_text": "If training resolution differs from inference resolution without resizing latent:",
+          "code_snippet": null,
+          "options": [
+            "A) Model fails to run",
+            "B) Model may see out-of-distribution spatial frequencies",
+            "C) Beta becomes zero",
+            "D) VAE scale changes automatically"
+          ],
+          "correct_option": "B",
+          "explanation": "Mismatched resolutions can cause quality loss; resize appropriately."
+        },
+        {
+          "id": "q16",
+          "type": "mcq",
+          "question_text": "Text conditioning strength correlates with:",
+          "code_snippet": null,
+          "options": [
+            "A) Caption quality and coverage",
+            "B) Batch size only",
+            "C) Beta schedule",
+            "D) VAE architecture"
+          ],
+          "correct_option": "A",
+          "explanation": "Better captions improve alignment."
+        },
+        {
+          "id": "q17",
+          "type": "mcq",
+          "question_text": "Resolution scaling factor for latent VAEs (e.g., f=8) means:",
+          "code_snippet": null,
+          "options": [
+            "A) Latent H/W are image H/W divided by f",
+            "B) Latent H/W are multiplied by f",
+            "C) Channels are divided by f",
+            "D) VAE is disabled"
+          ],
+          "correct_option": "A",
+          "explanation": "Latents are spatially downsampled by factor f."
+        },
+        {
+          "id": "q18",
+          "type": "mcq",
+          "question_text": "Shuffling captions across images (caption mixing) will:",
+          "code_snippet": null,
+          "options": [
+            "A) Improve alignment",
+            "B) Act as strong noise in conditioning, likely harming alignment",
+            "C) Speed GPU",
+            "D) Increase resolution"
+          ],
+          "correct_option": "B",
+          "explanation": "Misassigned captions add label noise."
+        },
+        {
+          "id": "q19",
+          "type": "mcq",
+          "question_text": "Diffusion training often uses per-sample random crop/rescale to:",
+          "code_snippet": null,
+          "options": [
+            "A) Reduce diversity",
+            "B) Improve robustness to different framing and zoom",
+            "C) Fix VAE",
+            "D) Alter betas"
+          ],
+          "correct_option": "B",
+          "explanation": "Random crops/rescales diversify compositions."
+        },
+        {
+          "id": "q20",
+          "type": "mcq",
+          "question_text": "Caption tokenizer padding should be:",
+          "code_snippet": null,
+          "options": [
+            "A) Left arbitrary",
+            "B) Consistent (e.g., max_length) with masks to avoid attending to padding",
+            "C) Disabled",
+            "D) Only for inference"
+          ],
+          "correct_option": "B",
+          "explanation": "Use attention masks to avoid conditioning on pad tokens."
+        }
+      ]
+    },
+    {
+      "section_id": "B",
+      "section_title": "Logic & Implementation Puzzles",
+      "total_questions": 20,
+      "marking_scheme": { "correct": 2.0, "incorrect": -0.5 },
+      "questions": [
+        {
+          "id": "q21",
+          "type": "parsons_problem",
+          "question_text": "Arrange aspect-ratio bucketing selection.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "ratios = torch.tensor(buckets)  # list of (h,w)" },
+            { "id": "b2", "text": "idx = torch.argmin((ratios[:,0]/ratios[:,1] - r).abs())" },
+            { "id": "b3", "text": "r = H / W" },
+            { "id": "b4", "text": "return buckets[idx]" },
+            { "id": "b5", "text": "def pick_bucket(H, W, buckets):" }
+          ],
+          "correct_order": ["b5", "b3", "b1", "b2", "b4"],
+          "explanation": "Pick nearest aspect ratio bucket."
+        },
+        {
+          "id": "q22",
+          "type": "parsons_problem",
+          "question_text": "Arrange pixel normalization to [-1,1].",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "return img * 2 - 1" },
+            { "id": "b2", "text": "def norm_neg1_to1(img):" }
+          ],
+          "correct_order": ["b2", "b1"],
+          "explanation": "Assuming img in [0,1], scale to [-1,1]."
+        },
+        {
+          "id": "q23",
+          "type": "parsons_problem",
+          "question_text": "Arrange random resize and crop.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "scale = torch.empty(1).uniform_(smin, smax).item()" },
+            { "id": "b2", "text": "img = F.resize(img, [int(H*scale), int(W*scale)])" },
+            { "id": "b3", "text": "img = F.crop(img, top, left, target_H, target_W)" },
+            { "id": "b4", "text": "top = torch.randint(0, img.shape[-2]-target_H+1, (1,)).item()" },
+            { "id": "b5", "text": "def rand_resized_crop(img, H, W, target_H, target_W, smin, smax):" },
+            { "id": "b6", "text": "left = torch.randint(0, img.shape[-1]-target_W+1, (1,)).item()" }
+          ],
+          "correct_order": ["b5", "b1", "b2", "b4", "b6", "b3"],
+          "explanation": "Resize then random crop to target."
+        },
+        {
+          "id": "q24",
+          "type": "parsons_problem",
+          "question_text": "Arrange caption dropout.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "if torch.rand(1) < p: text = \"\"" },
+            { "id": "b2", "text": "return text" },
+            { "id": "b3", "text": "def drop_caption(text, p):" }
+          ],
+          "correct_order": ["b3", "b1", "b2"],
+          "explanation": "Randomly empty caption."
+        },
+        {
+          "id": "q25",
+          "type": "parsons_problem",
+          "question_text": "Arrange to pad tokens to max_length with attention mask.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "tokens = tokenizer(text, return_tensors='pt', padding='max_length', max_length=max_len, truncation=True)" },
+            { "id": "b2", "text": "return tokens.input_ids, tokens.attention_mask" },
+            { "id": "b3", "text": "def tokenize(text, tokenizer, max_len):" }
+          ],
+          "correct_order": ["b3", "b1", "b2"],
+          "explanation": "Use tokenizer with padding and mask."
+        },
+        {
+          "id": "q26",
+          "type": "parsons_problem",
+          "question_text": "Arrange to convert image to latent with scaling.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "z = vae.encode(img).latent_dist.sample()" },
+            { "id": "b2", "text": "return z * scale" },
+            { "id": "b3", "text": "def encode_latent(img, vae, scale=0.18215):" }
+          ],
+          "correct_order": ["b3", "b1", "b2"],
+          "explanation": "Encode and scale latents."
+        },
+        {
+          "id": "q27",
+          "type": "parsons_problem",
+          "question_text": "Arrange to normalize caption length for bucketing stats.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "lengths = [len(tokenizer(c).input_ids) for c in captions]" },
+            { "id": "b2", "text": "return torch.tensor(lengths)" },
+            { "id": "b3", "text": "def caption_lengths(captions, tokenizer):" }
+          ],
+          "correct_order": ["b3", "b1", "b2"],
+          "explanation": "Compute token lengths."
+        },
+        {
+          "id": "q28",
+          "type": "parsons_problem",
+          "question_text": "Arrange duplicate detection via hash.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "h = hashlib.sha1(img_bytes).hexdigest()" },
+            { "id": "b2", "text": "seen.add(h)" },
+            { "id": "b3", "text": "return h in seen" },
+            { "id": "b4", "text": "def is_duplicate(img_bytes, seen):" }
+          ],
+          "correct_order": ["b4", "b1", "b3", "b2"],
+          "explanation": "Hash image bytes to detect duplicates."
+        },
+        {
+          "id": "q29",
+          "type": "parsons_problem",
+          "question_text": "Arrange to apply random horizontal flip with probability p.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "if torch.rand(1) < p:\n    img = torch.flip(img, dims=[-1])" },
+            { "id": "b2", "text": "return img" },
+            { "id": "b3", "text": "def rand_flip(img, p):" }
+          ],
+          "correct_order": ["b3", "b1", "b2"],
+          "explanation": "Flip width dimension with probability."
+        },
+        {
+          "id": "q30",
+          "type": "parsons_problem",
+          "question_text": "Arrange to build a bucket id embedding and add to timestep embedding.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "bucket_emb = bucket_table[bucket_id]" },
+            { "id": "b2", "text": "t_emb = t_emb + bucket_emb" },
+            { "id": "b3", "text": "return t_emb" },
+            { "id": "b4", "text": "def add_bucket_emb(t_emb, bucket_id, bucket_table):" }
+          ],
+          "correct_order": ["b4", "b1", "b2", "b3"],
+          "explanation": "Fuse resolution bucket info into t embedding."
+        },
+        {
+          "id": "q31",
+          "type": "fill_in_blank",
+          "question_text": "Bucketing groups images with similar aspect ratios to reduce ______.",
+          "correct_answer": "padding/wasted computation",
+          "explanation": "Less pad means more efficient batches."
+        },
+        {
+          "id": "q32",
+          "type": "fill_in_blank",
+          "question_text": "Caption dropout is analogous to training for ______ sampling.",
+          "correct_answer": "classifier-free guidance",
+          "explanation": "Drop captions to learn unconditional branch."
+        },
+        {
+          "id": "q33",
+          "type": "fill_in_blank",
+          "question_text": "Text encoders truncate tokens beyond their ______ length.",
+          "correct_answer": "maximum",
+          "explanation": "Excess tokens are dropped."
+        },
+        {
+          "id": "q34",
+          "type": "fill_in_blank",
+          "question_text": "Normalizing pixels to [-1,1] matches VAE training ______.",
+          "correct_answer": "distribution",
+          "explanation": "Keeps inputs in expected range."
+        },
+        {
+          "id": "q35",
+          "type": "fill_in_blank",
+          "question_text": "Random crops increase composition ______.",
+          "correct_answer": "diversity",
+          "explanation": "More varied framing."
+        },
+        {
+          "id": "q36",
+          "type": "fill_in_blank",
+          "question_text": "Duplicate removal reduces overfitting to repeated ______.",
+          "correct_answer": "samples/images",
+          "explanation": "Less memorization risk."
+        },
+        {
+          "id": "q37",
+          "type": "fill_in_blank",
+          "question_text": "Latent downsample factor f means latent H/W = image H/W divided by ______.",
+          "correct_answer": "f",
+          "explanation": "VAEs reduce spatial size."
+        },
+        {
+          "id": "q38",
+          "type": "fill_in_blank",
+          "question_text": "Resolution bucket id embeddings inform the model about ______ shape.",
+          "correct_answer": "current/aspect",
+          "explanation": "Bucket id encodes aspect."
+        },
+        {
+          "id": "q39",
+          "type": "fill_in_blank",
+          "question_text": "Color jitter aims to improve robustness to lighting/color ______.",
+          "correct_answer": "variation/shifts",
+          "explanation": "Augment color distribution."
+        },
+        {
+          "id": "q40",
+          "type": "fill_in_blank",
+          "question_text": "Padding tokens require an attention ______ to mask them out.",
+          "correct_answer": "mask",
+          "explanation": "Mask prevents attending to padding."
+        }
+      ]
+    },
+    {
+      "section_id": "C",
+      "section_title": "Deep Theory & Coding",
+      "total_questions": 10,
+      "marking_scheme": { "correct": 4.0, "incorrect": -1.0 },
+      "questions": [
+        {
+          "id": "q41",
+          "type": "theory_open_ended",
+          "question_text": "Discuss how aspect-ratio bucketing affects GPU utilization and model generalization across resolutions.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Buckets reduce padding, better GPU efficiency",
+              "Model sees multiple aspect ratios; bucket embeddings help",
+              "Potential generalization gaps outside buckets",
+              "Trade-off between efficiency and coverage"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q42",
+          "type": "theory_open_ended",
+          "question_text": "Analyze the effect of caption quality/noise on diffusion alignment. Propose mitigation strategies.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Noisy captions reduce text-image alignment",
+              "Use filtering, re-captioning, confidence weighting",
+              "Caption dropout for robustness",
+              "Impacts CLIP/text condition performance"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q43",
+          "type": "theory_open_ended",
+          "question_text": "Explain trade-offs between center crops and random crops for web-scale training. Include effects on bias and detail retention.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Center crops risk bias to centered subjects; less diversity",
+              "Random crops increase diversity but may cut important content",
+              "Effect on composition learning and fine details",
+              "Possible hybrid strategies"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q44",
+          "type": "theory_open_ended",
+          "question_text": "Describe how to integrate bucket id embeddings into a UNet/DiT pipeline and justify where to inject them.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Embed bucket id; add to timestep embedding or concatenate to tokens",
+              "Condition normalization or FiLM with bucket-aware scales",
+              "Placement in blocks to inform spatial scale",
+              "Rationale for early vs late injection"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q45",
+          "type": "theory_open_ended",
+          "question_text": "Propose a data pipeline for mixed-resolution training, covering resizing rules, bucketing, and caption/token handling.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Load/resize with aspect preservation, crop strategy",
+              "Assign buckets, pad/resize to bucket size",
+              "Tokenize with padding/mask, optional caption dropout",
+              "Balance batches across buckets"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q46",
+          "type": "theory_open_ended",
+          "question_text": "Explain why mismatched train/inference resolution can hurt quality and how to adapt (e.g., fine-tune, resize latents).",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Distribution shift in spatial frequency/content",
+              "VAE receptive field and UNet scaling assumptions",
+              "Solutions: fine-tune on target res, resize images/latents, use DiT/latent patching",
+              "Effect on metrics"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q47",
+          "type": "theory_open_ended",
+          "question_text": "Evaluate pros/cons of heavy augmentations (jitter, blur, cutout) for diffusion training on natural images.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Augmentations improve robustness but may distort distribution",
+              "Heavy blur removes detail; cutout may harm structure",
+              "Balance augmentation strength",
+              "Empirical tuning for FID/CLIP alignment"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q48",
+          "type": "theory_open_ended",
+          "question_text": "Design a caption filtering heuristic for large datasets and predict its impact on training outcomes.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Use length thresholds, language detection, profanity filters",
+              "CLIP text-image similarity scoring",
+              "Impact: better alignment, less noise; possible coverage loss",
+              "Trade-offs between precision and recall of good captions"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q49",
+          "type": "theory_open_ended",
+          "question_text": "Explain how token truncation affects CFG strength and propose methods to preserve long-context information.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Truncation drops tokens, weakens condition",
+              "Chunk prompts, use longer encoders, or summarize text",
+              "Potential multi-prompt conditioning",
+              "Impact on attention and guidance"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q50",
+          "type": "theory_open_ended",
+          "question_text": "Outline a VRAM-efficient batching strategy for multi-resolution diffusion training without sacrificing aspect diversity.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Bucketing by aspect/size, dynamic batch sizes per bucket",
+              "Gradient accumulation, mixed precision",
+              "Resize rules to preserve aspect",
+              "Scheduling buckets to cover diversity"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        }
+      ]
+    }
+  ]
+}

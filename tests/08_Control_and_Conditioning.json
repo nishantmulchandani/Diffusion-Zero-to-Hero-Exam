@@ -1,0 +1,657 @@
+{
+  "module_name": "08_Control_and_Conditioning",
+  "difficulty_level": "Hard",
+  "rendering_note": "Math tokens appear as plain text (e.g., alpha_bar_t, sqrt(beta(t)), mu, sigma^2). Render them with LaTeX/KaTeX/MathJax in the frontend.",
+  "sections": [
+    {
+      "section_id": "A",
+      "section_title": "Conceptual Recall (MCQs)",
+      "total_questions": 20,
+      "marking_scheme": { "correct": 2.0, "incorrect": -0.5 },
+      "questions": [
+        {
+          "id": "q1",
+          "type": "mcq",
+          "question_text": "ControlNet conditions the denoiser by:",
+          "code_snippet": null,
+          "options": [
+            "A) Freezing UNet and adding trainable side branches injected into each block",
+            "B) Replacing attention with LSTMs",
+            "C) Changing beta schedule",
+            "D) Training only the VAE decoder"
+          ],
+          "correct_option": "A",
+          "explanation": "ControlNet adds trainable copy with zero-conv to modulate frozen UNet features."
+        },
+        {
+          "id": "q2",
+          "type": "mcq",
+          "question_text": "T2I-Adapter differs from ControlNet mainly by:",
+          "code_snippet": null,
+          "options": [
+            "A) Injecting features only at input resolution via lightweight convs",
+            "B) Using transformers only",
+            "C) Requiring full UNet finetune",
+            "D) Removing cross-attention"
+          ],
+          "correct_option": "A",
+          "explanation": "Adapter is smaller and feeds features at multiple scales without duplicating full UNet."
+        },
+        {
+          "id": "q3",
+          "type": "mcq",
+          "question_text": "IP-Adapter conditions images by:",
+          "code_snippet": null,
+          "options": [
+            "A) Converting image into text tokens",
+            "B) Providing image embeddings directly into cross-attention keys/values",
+            "C) Changing sigma schedule",
+            "D) Scaling betas to zero"
+          ],
+          "correct_option": "B",
+          "explanation": "Image encoder outputs are used as K/V for conditioning."
+        },
+        {
+          "id": "q4",
+          "type": "mcq",
+          "question_text": "Why zero-initialize ControlNet residual outputs?",
+          "code_snippet": null,
+          "options": [
+            "A) Reduce FLOPs",
+            "B) Start from base UNet behavior and gradually learn control influence",
+            "C) Improve tokenizer speed",
+            "D) Change VAE scale"
+          ],
+          "correct_option": "B",
+          "explanation": "Zero init prevents damaging base model behavior at start."
+        },
+        {
+          "id": "q5",
+          "type": "mcq",
+          "question_text": "Conditional image guidance (e.g., canny) typically uses:",
+          "code_snippet": null,
+          "options": [
+            "A) Raw RGB as text tokens",
+            "B) Processed map encoded via CNN and injected as feature maps",
+            "C) Replacing eps with gradients",
+            "D) Changing optimizer"
+          ],
+          "correct_option": "B",
+          "explanation": "Edge/depth/pose maps are encoded to feature maps for conditioning."
+        },
+        {
+          "id": "q6",
+          "type": "mcq",
+          "question_text": "Conditioning dropout in ControlNet training helps by:",
+          "code_snippet": null,
+          "options": [
+            "A) Making control always on",
+            "B) Teaching robustness when control is partially absent",
+            "C) Freezing UNet",
+            "D) Removing guidance"
+          ],
+          "correct_option": "B",
+          "explanation": "Dropout trains model to handle missing/noisy control signals."
+        },
+        {
+          "id": "q7",
+          "type": "mcq",
+          "question_text": "LoRA applied to cross-attention layers primarily modulates:",
+          "code_snippet": null,
+          "options": [
+            "A) VAE decoder",
+            "B) K/V/Q projections to alter conditioning strength",
+            "C) Beta schedule",
+            "D) Noise predictor head only"
+          ],
+          "correct_option": "B",
+          "explanation": "Adapters in attention projections tweak how conditions are attended."
+        },
+        {
+          "id": "q8",
+          "type": "mcq",
+          "question_text": "Negative prompts in CFG alter sampling by:",
+          "code_snippet": null,
+          "options": [
+            "A) Removing betas",
+            "B) Using unconditional branch with specific undesired text, then combining as CFG",
+            "C) Training new classifier",
+            "D) Changing patch size"
+          ],
+          "correct_option": "B",
+          "explanation": "Negative text is fed to unconditional branch, shaping CFG difference."
+        },
+        {
+          "id": "q9",
+          "type": "mcq",
+          "question_text": "Pose control input resolution usually:",
+          "code_snippet": null,
+          "options": [
+            "A) Matches latent resolution after VAE downsample",
+            "B) Must be double latent size",
+            "C) Is unrelated to image size",
+            "D) Must be tokenized"
+          ],
+          "correct_option": "A",
+          "explanation": "Control features are often downsampled to latent resolution before injection."
+        },
+        {
+          "id": "q10",
+          "type": "mcq",
+          "question_text": "Multi-control (e.g., depth + canny) fusion typically:",
+          "code_snippet": null,
+          "options": [
+            "A) Adds control features per source and sums or concatenates them per block",
+            "B) Trains separate UNet for each control",
+            "C) Requires removing text conditioning",
+            "D) Sets guidance weight to zero"
+          ],
+          "correct_option": "A",
+          "explanation": "Multiple control streams are merged at injection points."
+        },
+        {
+          "id": "q11",
+          "type": "mcq",
+          "question_text": "Adapter training often freezes the base UNet because:",
+          "code_snippet": null,
+          "options": [
+            "A) It saves VRAM and preserves base capability",
+            "B) It speeds tokenizer",
+            "C) It improves LR scheduling",
+            "D) It prevents CFG"
+          ],
+          "correct_option": "A",
+          "explanation": "Adapter/ControlNet methods are parameter-efficient and keep base intact."
+        },
+        {
+          "id": "q12",
+          "type": "mcq",
+          "question_text": "IP-Adapter often uses:",
+          "code_snippet": null,
+          "options": [
+            "A) ResNet encoder only",
+            "B) Pretrained CLIP image encoder to produce conditioning embeddings",
+            "C) Random CNN",
+            "D) Optical flow"
+          ],
+          "correct_option": "B",
+          "explanation": "CLIP image encoder provides semantic embeddings for conditioning."
+        },
+        {
+          "id": "q13",
+          "type": "mcq",
+          "question_text": "ControlNet zero-conv layers are placed to:",
+          "code_snippet": null,
+          "options": [
+            "A) Increase stride",
+            "B) Match channel dimensions when summing into UNet blocks",
+            "C) Change beta schedule",
+            "D) Remove positional encodings"
+          ],
+          "correct_option": "B",
+          "explanation": "Zero-conv aligns channels while starting at zero output."
+        },
+        {
+          "id": "q14",
+          "type": "mcq",
+          "question_text": "Timestep-aware control feature scaling is helpful because:",
+          "code_snippet": null,
+          "options": [
+            "A) Early steps need stronger structural guidance than late steps",
+            "B) Late steps only need noise",
+            "C) It reduces FLOPs",
+            "D) It fixes VAE artifacts"
+          ],
+          "correct_option": "A",
+          "explanation": "Structural signals matter most when noise is high; scaling by t helps."
+        },
+        {
+          "id": "q15",
+          "type": "mcq",
+          "question_text": "In ControlNet training, loss is applied to:",
+          "code_snippet": null,
+          "options": [
+            "A) Only control branch outputs",
+            "B) Final combined UNet prediction",
+            "C) VAE encoder",
+            "D) Classifier"
+          ],
+          "correct_option": "B",
+          "explanation": "Loss supervises the combined prediction; control branch influences it."
+        },
+        {
+          "id": "q16",
+          "type": "mcq",
+          "question_text": "Spatial alignment between control maps and latent features requires:",
+          "code_snippet": null,
+          "options": [
+            "A) Identical tensor shapes after downsample",
+            "B) Random cropping",
+            "C) Removing positional encodings",
+            "D) Using 1D tokens only"
+          ],
+          "correct_option": "A",
+          "explanation": "Control maps are resized/downsampled to match latent spatial dimensions."
+        },
+        {
+          "id": "q17",
+          "type": "mcq",
+          "question_text": "Why might a small adapter be preferred over full ControlNet on low-resource devices?",
+          "code_snippet": null,
+          "options": [
+            "A) Adapter removes need for UNet",
+            "B) Adapter has fewer parameters and lower VRAM usage",
+            "C) Adapter eliminates CFG",
+            "D) Adapter changes VAE scale"
+          ],
+          "correct_option": "B",
+          "explanation": "Adapters are lightweight and cheaper to train/run."
+        },
+        {
+          "id": "q18",
+          "type": "mcq",
+          "question_text": "If control is mismatched (wrong pose), common failure is:",
+          "code_snippet": null,
+          "options": [
+            "A) Perfect alignment",
+            "B) Twisted or broken limbs, artifacts",
+            "C) Higher FID",
+            "D) Faster sampling"
+          ],
+          "correct_option": "B",
+          "explanation": "Contradictory control causes geometric artifacts."
+        },
+        {
+          "id": "q19",
+          "type": "mcq",
+          "question_text": "Scaling control weight during inference allows:",
+          "code_snippet": null,
+          "options": [
+            "A) Changing batch size",
+            "B) Adjusting strength of conditioning without retraining",
+            "C) Replacing VAE",
+            "D) Dropping timestep embedding"
+          ],
+          "correct_option": "B",
+          "explanation": "Weights let users tune adherence to control vs creativity."
+        },
+        {
+          "id": "q20",
+          "type": "mcq",
+          "question_text": "ControlNet’s extra input channels are often initialized to:",
+          "code_snippet": null,
+          "options": [
+            "A) Ones",
+            "B) Zeros",
+            "C) Random normal with std 0.1",
+            "D) Beta schedule values"
+          ],
+          "correct_option": "B",
+          "explanation": "Zero init ensures no effect before training."
+        }
+      ]
+    },
+    {
+      "section_id": "B",
+      "section_title": "Logic & Implementation Puzzles",
+      "total_questions": 20,
+      "marking_scheme": { "correct": 2.0, "incorrect": -0.5 },
+      "questions": [
+        {
+          "id": "q21",
+          "type": "parsons_problem",
+          "question_text": "Arrange to inject control feature into UNet block output with zero-conv.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "ctrl = zero_conv(control_feat)" },
+            { "id": "b2", "text": "return block_out + ctrl" },
+            { "id": "b3", "text": "def fuse_control(block_out, control_feat, zero_conv):" }
+          ],
+          "correct_order": ["b3", "b1", "b2"],
+          "explanation": "Zero-initialized conv aligns channels then adds to block output."
+        },
+        {
+          "id": "q22",
+          "type": "parsons_problem",
+          "question_text": "Arrange to encode a canny map to latent resolution.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "x = F.interpolate(canny, scale_factor=1/8, mode='bilinear', align_corners=False)" },
+            { "id": "b2", "text": "feat = encoder(x)" },
+            { "id": "b3", "text": "def encode_canny(canny, encoder):" },
+            { "id": "b4", "text": "return feat" }
+          ],
+          "correct_order": ["b3", "b1", "b2", "b4"],
+          "explanation": "Resize to latent scale then encode with CNN."
+        },
+        {
+          "id": "q23",
+          "type": "parsons_problem",
+          "question_text": "Arrange LoRA injection into attention projection.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "base = proj(x)" },
+            { "id": "b2", "text": "delta = lora_B(lora_A(x)) * alpha / r" },
+            { "id": "b3", "text": "return base + delta" },
+            { "id": "b4", "text": "def lora_proj(x, proj, lora_A, lora_B, alpha, r):" }
+          ],
+          "correct_order": ["b4", "b1", "b2", "b3"],
+          "explanation": "Add low-rank update scaled by alpha/r."
+        },
+        {
+          "id": "q24",
+          "type": "parsons_problem",
+          "question_text": "Arrange to build control dropout.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "if torch.rand(1) < p: control = None" },
+            { "id": "b2", "text": "return control" },
+            { "id": "b3", "text": "def drop_control(control, p):" }
+          ],
+          "correct_order": ["b3", "b1", "b2"],
+          "explanation": "Randomly remove control input."
+        },
+        {
+          "id": "q25",
+          "type": "parsons_problem",
+          "question_text": "Arrange to concatenate multiple control maps along channel dim.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "controls = torch.cat(control_list, dim=1)" },
+            { "id": "b2", "text": "return controls" },
+            { "id": "b3", "text": "def merge_controls(control_list):" }
+          ],
+          "correct_order": ["b3", "b1", "b2"],
+          "explanation": "Channel concat merges different maps."
+        },
+        {
+          "id": "q26",
+          "type": "parsons_problem",
+          "question_text": "Arrange to add image embedding as cross-attention key/value (IP-Adapter style).",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "kv_cond = img_proj(img_emb)" },
+            { "id": "b2", "text": "kv = torch.cat([kv_text, kv_cond], dim=1)" },
+            { "id": "b3", "text": "def fuse_kv(kv_text, img_emb, img_proj):" },
+            { "id": "b4", "text": "return kv" }
+          ],
+          "correct_order": ["b3", "b1", "b2", "b4"],
+          "explanation": "Project image embedding then concatenate with text K/V."
+        },
+        {
+          "id": "q27",
+          "type": "parsons_problem",
+          "question_text": "Arrange to scale control residual by timestep embedding.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "scale = mlp(t_emb)[:, :, None, None]" },
+            { "id": "b2", "text": "ctrl = ctrl * scale" },
+            { "id": "b3", "text": "return ctrl" },
+            { "id": "b4", "text": "def scale_control(ctrl, t_emb, mlp):" }
+          ],
+          "correct_order": ["b4", "b1", "b2", "b3"],
+          "explanation": "FiLM-like scaling by timestep."
+        },
+        {
+          "id": "q28",
+          "type": "parsons_problem",
+          "question_text": "Arrange to compute negative prompt CFG noise.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "eps_neg = model(x_t, t, cond=neg_text)" },
+            { "id": "b2", "text": "eps_pos = model(x_t, t, cond=pos_text)" },
+            { "id": "b3", "text": "return eps_neg + w * (eps_pos - eps_neg)" },
+            { "id": "b4", "text": "def cfg_negative(model, x_t, t, pos_text, neg_text, w):" }
+          ],
+          "correct_order": ["b4", "b1", "b2", "b3"],
+          "explanation": "Use negative prompt as unconditional branch."
+        },
+        {
+          "id": "q29",
+          "type": "parsons_problem",
+          "question_text": "Arrange control feature alignment to latent shape.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "ctrl = F.interpolate(ctrl, size=latent.shape[-2:], mode='bilinear', align_corners=False)" },
+            { "id": "b2", "text": "return ctrl" },
+            { "id": "b3", "text": "def align_control(ctrl, latent):" }
+          ],
+          "correct_order": ["b3", "b1", "b2"],
+          "explanation": "Resize control features to latent spatial dimensions."
+        },
+        {
+          "id": "q30",
+          "type": "parsons_problem",
+          "question_text": "Arrange to freeze base UNet parameters while training ControlNet.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "for p in unet.parameters():\n    p.requires_grad = False" },
+            { "id": "b2", "text": "return unet" },
+            { "id": "b3", "text": "def freeze_unet(unet):" }
+          ],
+          "correct_order": ["b3", "b1", "b2"],
+          "explanation": "Disable grads on base model."
+        },
+        {
+          "id": "q31",
+          "type": "fill_in_blank",
+          "question_text": "ControlNet copies UNet layers and adds ______-initialized residual paths.",
+          "correct_answer": "zero",
+          "explanation": "Zero-conv outputs start at zero."
+        },
+        {
+          "id": "q32",
+          "type": "fill_in_blank",
+          "question_text": "T2I-Adapter is typically ______ than ControlNet.",
+          "correct_answer": "smaller/lighter",
+          "explanation": "Adapter is lightweight."
+        },
+        {
+          "id": "q33",
+          "type": "fill_in_blank",
+          "question_text": "IP-Adapter feeds image embeddings into cross-attention ______/values.",
+          "correct_answer": "keys",
+          "explanation": "K/V are augmented with image embeddings."
+        },
+        {
+          "id": "q34",
+          "type": "fill_in_blank",
+          "question_text": "Negative prompts are passed to the ______ branch for CFG.",
+          "correct_answer": "unconditional",
+          "explanation": "Use negative text as unconditional input."
+        },
+        {
+          "id": "q35",
+          "type": "fill_in_blank",
+          "question_text": "Control features must align in ______ dimensions with latent maps.",
+          "correct_answer": "spatial",
+          "explanation": "H/W must match for addition."
+        },
+        {
+          "id": "q36",
+          "type": "fill_in_blank",
+          "question_text": "Control weight scaling allows adjusting control strength at ______ time.",
+          "correct_answer": "inference",
+          "explanation": "Control strength can be tuned without retrain."
+        },
+        {
+          "id": "q37",
+          "type": "fill_in_blank",
+          "question_text": "LoRA rank r controls adapter ______.",
+          "correct_answer": "capacity/expressiveness",
+          "explanation": "Higher rank = more capacity."
+        },
+        {
+          "id": "q38",
+          "type": "fill_in_blank",
+          "question_text": "Conditioning dropout improves robustness to ______ control signals.",
+          "correct_answer": "missing/noisy",
+          "explanation": "Dropout simulates absent control."
+        },
+        {
+          "id": "q39",
+          "type": "fill_in_blank",
+          "question_text": "Zero-conv aligns channel count while keeping initial output ______.",
+          "correct_answer": "zero",
+          "explanation": "Zero weight and bias produce zero output initially."
+        },
+        {
+          "id": "q40",
+          "type": "fill_in_blank",
+          "question_text": "Multi-control setups often ______ control tensors along channel dim.",
+          "correct_answer": "concatenate",
+          "explanation": "Channel concat merges signals."
+        }
+      ]
+    },
+    {
+      "section_id": "C",
+      "section_title": "Deep Theory & Coding",
+      "total_questions": 10,
+      "marking_scheme": { "correct": 4.0, "incorrect": -1.0 },
+      "questions": [
+        {
+          "id": "q41",
+          "type": "theory_open_ended",
+          "question_text": "Compare ControlNet, T2I-Adapter, and LoRA-attention conditioning in terms of parameter count, training cost, and fidelity to control inputs.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "ControlNet duplicates UNet; highest params, strong control",
+              "Adapter small convs; lightweight, moderate control",
+              "LoRA in attention minimal params; modulates conditioning strength",
+              "Trade-offs: VRAM, speed, fidelity"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q42",
+          "type": "theory_open_ended",
+          "question_text": "Explain how zero-initialization in ControlNet avoids catastrophic forgetting and how training gradually introduces control signals.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Zero outputs mean initial behavior matches base UNet",
+              "Training scales control from zero, preserving base capability",
+              "Gradual influence via learned weights",
+              "Prevents destabilizing early predictions"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q43",
+          "type": "theory_open_ended",
+          "question_text": "Describe how to train IP-Adapter to preserve style while following image conditioning. Discuss positive/negative branches and loss choices.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Use CLIP image encoder; inject K/V",
+              "Train with paired image-text; maybe reconstruction/style loss",
+              "CFG with negative prompt optional",
+              "Balance style retention vs adherence to conditioning image"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q44",
+          "type": "theory_open_ended",
+          "question_text": "Analyze failure modes when control signals contradict text prompts. Propose mitigation strategies.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Conflicting constraints cause artifacts/geometric errors",
+              "Mitigation: reduce control weight, align prompt, use robust controls, pre-filter inputs",
+              "Conditioning dropout training helps",
+              "Potential to rerun with adjusted weights"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q45",
+          "type": "theory_open_ended",
+          "question_text": "Discuss how to blend multiple controls (pose, depth, canny) without overconstraining. Include weighting schedules over timesteps.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Separate encoders, merge features (sum/concat)",
+              "Weights per control to balance influence",
+              "Schedule stronger control early, fade later",
+              "Avoid overconstraint by prioritizing structure then texture"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q46",
+          "type": "theory_open_ended",
+          "question_text": "Explain how conditioning dropout can be used to train a single model that works with or without control, and how CFG interacts with it.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Randomly drop control during training",
+              "Model learns to operate unconditioned or conditioned",
+              "CFG can still be applied; unconditional branch may include dropped control",
+              "Improves robustness to missing inputs"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q47",
+          "type": "theory_open_ended",
+          "question_text": "Compare parameter-efficient LoRA finetuning in attention vs full fine-tuning for adapting to a new visual domain under control inputs.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "LoRA limited capacity but preserves base; less forgetting",
+              "Full finetune more expressive but risks overfit and forgetting",
+              "Control inputs may require modulating attention specifically",
+              "Compute/VRAM differences"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q48",
+          "type": "theory_open_ended",
+          "question_text": "Outline a training loop for ControlNet including control data preprocessing, UNet freezing, and loss application.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Prepare control maps (resize, normalize)",
+              "Freeze base UNet params, train control branch",
+              "Forward with control features added",
+              "Noise prediction loss on combined output",
+              "Use conditioning dropout optional"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q49",
+          "type": "theory_open_ended",
+          "question_text": "Explain why control features often need timestep-aware scaling and how you would implement it efficiently.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Noise level affects how much structure is needed",
+              "Scale control with function of t or log-SNR",
+              "FiLM/MLP on t_emb to produce scale factors",
+              "Lightweight broadcast to feature maps"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q50",
+          "type": "theory_open_ended",
+          "question_text": "Propose an evaluation protocol to measure how well control-guided diffusion adheres to both text and control signals.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Use metrics: pose/depth alignment error, CLIP score for text match",
+              "Human or automated consistency checks",
+              "Vary control weights to test robustness",
+              "Report fidelity vs diversity trade-offs"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        }
+      ]
+    }
+  ]
+}

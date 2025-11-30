@@ -1,0 +1,669 @@
+{
+  "module_name": "02_Architecture_UNet_ResNet_Attn_VAE",
+  "difficulty_level": "Hard",
+  "rendering_note": "Math tokens appear as plain text (e.g., alpha_bar_t, sqrt(beta(t)), mu, sigma^2). Render them with LaTeX/KaTeX/MathJax in the frontend.",
+  "sections": [
+    {
+      "section_id": "A",
+      "section_title": "Conceptual Recall (MCQs)",
+      "total_questions": 20,
+      "marking_scheme": { "correct": 2.0, "incorrect": -0.5 },
+      "questions": [
+        {
+          "id": "q1",
+          "type": "mcq",
+          "question_text": "U-Net skip connections primarily mitigate which issue in diffusion denoisers?",
+          "code_snippet": null,
+          "options": [
+            "A) Over-parameterization",
+            "B) Information bottleneck of deep encoder",
+            "C) Vanishing variance",
+            "D) Gradient explosion in timestep embedding"
+          ],
+          "correct_option": "B",
+          "explanation": "Skips preserve spatial detail lost in downsampling."
+        },
+        {
+          "id": "q2",
+          "type": "mcq",
+          "question_text": "A residual block with input x and function F outputs:",
+          "code_snippet": null,
+          "options": [
+            "A) F(x)",
+            "B) x + F(x)",
+            "C) x - F(x)",
+            "D) F(x) - x"
+          ],
+          "correct_option": "B",
+          "explanation": "Standard pre-activation/post-activation residual adds identity."
+        },
+        {
+          "id": "q3",
+          "type": "mcq",
+          "question_text": "Self-attention with Q,K,V of shape (B, H, W, d) yields output shape:",
+          "code_snippet": null,
+          "options": [
+            "A) (B, H*W, d)",
+            "B) (B, H, W, d)",
+            "C) (B, d)",
+            "D) (H, W, d)"
+          ],
+          "correct_option": "B",
+          "explanation": "Reshaped to match spatial grid after attention."
+        },
+        {
+          "id": "q4",
+          "type": "mcq",
+          "question_text": "Cross-attention used for conditioning uses which query/key/value mapping?",
+          "code_snippet": null,
+          "options": [
+            "A) Q from condition, K/V from latent",
+            "B) Q from latent, K/V from condition",
+            "C) Q/K/V all from latent",
+            "D) Q/K/V all from condition"
+          ],
+          "correct_option": "B",
+          "explanation": "Latent queries attend to condition embeddings."
+        },
+        {
+          "id": "q5",
+          "type": "mcq",
+          "question_text": "Timestep embeddings in U-Net are often injected via:",
+          "code_snippet": null,
+          "options": [
+            "A) Bias-only layers",
+            "B) FiLM/scale-shift in residual blocks",
+            "C) Dropout masks",
+            "D) Conv1x1 on outputs only"
+          ],
+          "correct_option": "B",
+          "explanation": "FiLM-like modulation scales and shifts activations per t."
+        },
+        {
+          "id": "q6",
+          "type": "mcq",
+          "question_text": "In latent-space VAEs, the encoder outputs mean and log-variance to:",
+          "code_snippet": null,
+          "options": [
+            "A) Enforce deterministic mapping",
+            "B) Parameterize Gaussian posterior",
+            "C) Reduce KL to zero",
+            "D) Make latent discrete"
+          ],
+          "correct_option": "B",
+          "explanation": "VAE posterior is diagonal Gaussian."
+        },
+        {
+          "id": "q7",
+          "type": "mcq",
+          "question_text": "Attention complexity on feature map (H,W) with channels C is:",
+          "code_snippet": null,
+          "options": [
+            "A) O(HWC)",
+            "B) O((HW)^2 C)",
+            "C) O(HW log C)",
+            "D) O(C^2)"
+          ],
+          "correct_option": "B",
+          "explanation": "Pairwise token interactions cost (HW)^2."
+        },
+        {
+          "id": "q8",
+          "type": "mcq",
+          "question_text": "Why include group normalization in residual blocks for diffusion?",
+          "code_snippet": null,
+          "options": [
+            "A) Batch-size invariance",
+            "B) Adds noise",
+            "C) Reduces receptive field",
+            "D) Forces orthogonality"
+          ],
+          "correct_option": "A",
+          "explanation": "Stable stats even with small batches."
+        },
+        {
+          "id": "q9",
+          "type": "mcq",
+          "question_text": "In VAE decoder, sampling from latent z affects output by:",
+          "code_snippet": null,
+          "options": [
+            "A) Determining convolution stride",
+            "B) Acting as condition to deconvolutional generator",
+            "C) Changing kernel sizes",
+            "D) Disabling attention"
+          ],
+          "correct_option": "B",
+          "explanation": "Latent code seeds generative decoder."
+        },
+        {
+          "id": "q10",
+          "type": "mcq",
+          "question_text": "Multi-head attention benefit in diffusion U-Nets:",
+          "code_snippet": null,
+          "options": [
+            "A) Reduces memory",
+            "B) Provides subspace specialization per head",
+            "C) Forces orthogonality",
+            "D) Replaces residuals"
+          ],
+          "correct_option": "B",
+          "explanation": "Heads capture diverse patterns/relations."
+        },
+        {
+          "id": "q11",
+          "type": "mcq",
+          "question_text": "Downsample factor of 8 in U-Net implies latent spatial size:",
+          "code_snippet": null,
+          "options": [
+            "A) H/8 x W/8",
+            "B) H x W",
+            "C) 8H x 8W",
+            "D) H/4 x W/2"
+          ],
+          "correct_option": "A",
+          "explanation": "Each stage halves spatial dims."
+        },
+        {
+          "id": "q12",
+          "type": "mcq",
+          "question_text": "Why insert attention at mid and high resolutions in diffusion U-Nets?",
+          "code_snippet": null,
+          "options": [
+            "A) To reduce FLOPs",
+            "B) To capture long-range structure at multiple scales",
+            "C) To disable convolution",
+            "D) To enforce periodicity"
+          ],
+          "correct_option": "B",
+          "explanation": "Combines local convs with global attention."
+        },
+        {
+          "id": "q13",
+          "type": "mcq",
+          "question_text": "ResNet skip connection effect on Jacobian eigenvalues:",
+          "code_snippet": null,
+          "options": [
+            "A) Shrinks to zero",
+            "B) Centers near 1 improving stability",
+            "C) Makes them random",
+            "D) Forces negativity"
+          ],
+          "correct_option": "B",
+          "explanation": "Identity path keeps gradients well-conditioned."
+        },
+        {
+          "id": "q14",
+          "type": "mcq",
+          "question_text": "Latent VAE prior p(z) usually chosen as:",
+          "code_snippet": null,
+          "options": [
+            "A) Uniform",
+            "B) Standard normal",
+            "C) Laplace",
+            "D) Dirichlet"
+          ],
+          "correct_option": "B",
+          "explanation": "Isotropic Gaussian prior regularizes latent space."
+        },
+        {
+          "id": "q15",
+          "type": "mcq",
+          "question_text": "Which part of U-Net handles multi-scale context aggregation?",
+          "code_snippet": null,
+          "options": [
+            "A) Shallow conv",
+            "B) Encoder path + bottleneck",
+            "C) Output head only",
+            "D) Time embedding"
+          ],
+          "correct_option": "B",
+          "explanation": "Downsample path enlarges receptive field."
+        },
+        {
+          "id": "q16",
+          "type": "mcq",
+          "question_text": "Cross-attention tensor shapes with condition length L: K,V in shape:",
+          "code_snippet": null,
+          "options": [
+            "A) (B, HW, d)",
+            "B) (B, L, d)",
+            "C) (B, d, L)",
+            "D) (L, B, d)"
+          ],
+          "correct_option": "B",
+          "explanation": "Condition tokens length L produce K,V of size (B,L,d)."
+        },
+        {
+          "id": "q17",
+          "type": "mcq",
+          "question_text": "In diffusion U-Net, zero-initialized last conv helps because:",
+          "code_snippet": null,
+          "options": [
+            "A) Prevents early overfitting",
+            "B) Starts as identity/noise prediction near zero",
+            "C) Reduces FLOPs",
+            "D) Enforces symmetry"
+          ],
+          "correct_option": "B",
+          "explanation": "Stabilizes training by small initial outputs."
+        },
+        {
+          "id": "q18",
+          "type": "mcq",
+          "question_text": "Why are sinusoidal time embeddings used?",
+          "code_snippet": null,
+          "options": [
+            "A) Reduce model size",
+            "B) Provide smooth, multi-frequency encoding of t",
+            "C) Avoid normalization",
+            "D) Enforce integer timesteps only"
+          ],
+          "correct_option": "B",
+          "explanation": "Sinusoids offer smooth generalization over continuous t."
+        },
+        {
+          "id": "q19",
+          "type": "mcq",
+          "question_text": "A typical VAE decoder upsamples using:",
+          "code_snippet": null,
+          "options": [
+            "A) Max pooling",
+            "B) Transposed convolutions or nearest+conv",
+            "C) Average pooling",
+            "D) FFT inverse only"
+          ],
+          "correct_option": "B",
+          "explanation": "Learned upsampling reconstructs spatial maps."
+        },
+        {
+          "id": "q20",
+          "type": "mcq",
+          "question_text": "Why mix ResNet blocks and attention blocks in diffusion U-Nets?",
+          "code_snippet": null,
+          "options": [
+            "A) To reduce depth",
+            "B) To combine local detail (conv) and global context (attn)",
+            "C) To remove skips",
+            "D) To avoid normalization"
+          ],
+          "correct_option": "B",
+          "explanation": "Hybrid captures both locality and long-range structure."
+        }
+      ]
+    },
+    {
+      "section_id": "B",
+      "section_title": "Logic & Implementation Puzzles",
+      "total_questions": 20,
+      "marking_scheme": { "correct": 2.0, "incorrect": -0.5 },
+      "questions": [
+        {
+          "id": "q21",
+          "type": "parsons_problem",
+          "question_text": "Arrange to inject timestep embedding into a residual block via scale-shift.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "scale, shift = torch.chunk(mlp(t_emb), 2, dim=1)" },
+            { "id": "b2", "text": "h = norm(x)" },
+            { "id": "b3", "text": "h = h * (1 + scale[:, :, None, None]) + shift[:, :, None, None]" },
+            { "id": "b4", "text": "h = conv(h)" },
+            { "id": "b5", "text": "def res_with_time(x, t_emb):" },
+            { "id": "b6", "text": "return x + h" }
+          ],
+          "correct_order": ["b5", "b1", "b2", "b3", "b4", "b6"],
+          "explanation": "FiLM modulation uses scale/shift from t_emb before conv."
+        },
+        {
+          "id": "q22",
+          "type": "parsons_problem",
+          "question_text": "Arrange a self-attention block on 2D feature map.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "q = to_q(x_flat)" },
+            { "id": "b2", "text": "attn = (q @ k.transpose(-2, -1)) * scale" },
+            { "id": "b3", "text": "x_flat = x.permute(0,2,3,1).reshape(B, HW, C)" },
+            { "id": "b4", "text": "out = attn @ v" },
+            { "id": "b5", "text": "out = out.reshape(B, H, W, C).permute(0,3,1,2)" },
+            { "id": "b6", "text": "k = to_k(x_flat); v = to_v(x_flat)" },
+            { "id": "b7", "text": "attn = attn.softmax(dim=-1)" },
+            { "id": "b8", "text": "def attn2d(x):" }
+          ],
+          "correct_order": ["b8", "b3", "b1", "b6", "b2", "b7", "b4", "b5"],
+          "explanation": "Flatten, project QKV, softmax, apply, then reshape back."
+        },
+        {
+          "id": "q23",
+          "type": "parsons_problem",
+          "question_text": "Arrange to build a VAE encoder head producing mu, logvar.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "h = conv_stack(x)" },
+            { "id": "b2", "text": "mu = mu_proj(h.mean(dim=[2,3]))" },
+            { "id": "b3", "text": "logvar = logvar_proj(h.mean(dim=[2,3]))" },
+            { "id": "b4", "text": "def encode(x):" },
+            { "id": "b5", "text": "return mu, logvar" }
+          ],
+          "correct_order": ["b4", "b1", "b2", "b3", "b5"],
+          "explanation": "Global pooling then linear heads for mu/logvar."
+        },
+        {
+          "id": "q24",
+          "type": "parsons_problem",
+          "question_text": "Arrange to apply cross-attention with condition tokens c.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "q = to_q(x)" },
+            { "id": "b2", "text": "k = to_k(c); v = to_v(c)" },
+            { "id": "b3", "text": "attn = softmax((q @ k.transpose(-2,-1)) * scale)" },
+            { "id": "b4", "text": "out = attn @ v" },
+            { "id": "b5", "text": "def cross_attn(x, c):" }
+          ],
+          "correct_order": ["b5", "b1", "b2", "b3", "b4"],
+          "explanation": "Queries from latent, keys/values from condition."
+        },
+        {
+          "id": "q25",
+          "type": "parsons_problem",
+          "question_text": "Arrange to fuse skip connection in U-Net decoder.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "x = upsample(dec)" },
+            { "id": "b2", "text": "x = torch.cat([x, skip], dim=1)" },
+            { "id": "b3", "text": "x = resblock(x)" },
+            { "id": "b4", "text": "def fuse(dec, skip):" },
+            { "id": "b5", "text": "return x" }
+          ],
+          "correct_order": ["b4", "b1", "b2", "b3", "b5"],
+          "explanation": "Upsample, concat with skip, process via resblock."
+        },
+        {
+          "id": "q26",
+          "type": "parsons_problem",
+          "question_text": "Arrange timestep embedding creation with sinusoidal + MLP.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "emb = sinusoidal(t)" },
+            { "id": "b2", "text": "emb = mlp(emb)" },
+            { "id": "b3", "text": "return emb" },
+            { "id": "b4", "text": "def time_emb(t):" }
+          ],
+          "correct_order": ["b4", "b1", "b2", "b3"],
+          "explanation": "Sinusoid then project through MLP."
+        },
+        {
+          "id": "q27",
+          "type": "parsons_problem",
+          "question_text": "Arrange a residual block with pre-norm.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "h = conv1(norm1(x))" },
+            { "id": "b2", "text": "h = conv2(act(norm2(h)))" },
+            { "id": "b3", "text": "return x + h" },
+            { "id": "b4", "text": "def res_block(x):" }
+          ],
+          "correct_order": ["b4", "b1", "b2", "b3"],
+          "explanation": "Pre-norm improves stability; add residual."
+        },
+        {
+          "id": "q28",
+          "type": "parsons_problem",
+          "question_text": "Arrange to compute multi-head attention outputs concatenation.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "heads = [attn_head(x) for _ in range(H)]" },
+            { "id": "b2", "text": "out = torch.cat(heads, dim=-1)" },
+            { "id": "b3", "text": "out = proj(out)" },
+            { "id": "b4", "text": "def mha(x):" }
+          ],
+          "correct_order": ["b4", "b1", "b2", "b3"],
+          "explanation": "Concat head outputs then project."
+        },
+        {
+          "id": "q29",
+          "type": "parsons_problem",
+          "question_text": "Arrange to apply group normalization to 4D tensor x.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "x = gn(x)" },
+            { "id": "b2", "text": "return x" },
+            { "id": "b3", "text": "def apply_gn(x):" }
+          ],
+          "correct_order": ["b3", "b1", "b2"],
+          "explanation": "GroupNorm called on (B,C,H,W)."
+        },
+        {
+          "id": "q30",
+          "type": "parsons_problem",
+          "question_text": "Arrange VAE reparameterization.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "eps = torch.randn_like(mu)" },
+            { "id": "b2", "text": "z = mu + torch.exp(0.5 * logvar) * eps" },
+            { "id": "b3", "text": "def reparam(mu, logvar):" },
+            { "id": "b4", "text": "return z" }
+          ],
+          "correct_order": ["b3", "b1", "b2", "b4"],
+          "explanation": "Location-scale transform with learned logvar."
+        },
+        {
+          "id": "q31",
+          "type": "fill_in_blank",
+          "question_text": "GroupNorm normalizes over ______ and channels groups, not batch.",
+          "correct_answer": "spatial dimensions",
+          "explanation": "GroupNorm is batch-size agnostic."
+        },
+        {
+          "id": "q32",
+          "type": "fill_in_blank",
+          "question_text": "Self-attention scores use QK^T scaled by ______.",
+          "correct_answer": "1 / sqrt(d_k)",
+          "explanation": "Prevents large dot products from dominating softmax."
+        },
+        {
+          "id": "q33",
+          "type": "fill_in_blank",
+          "question_text": "U-Net skip concatenation doubles channels; decoder must use ______ to mix.",
+          "correct_answer": "a conv/residual block",
+          "explanation": "Post-concat mixing reduces channel dimension."
+        },
+        {
+          "id": "q34",
+          "type": "fill_in_blank",
+          "question_text": "A residual block output y = x + F(x) improves conditioning by moving Jacobian eigenvalues toward ______.",
+          "correct_answer": "1",
+          "explanation": "Identity path stabilizes gradient flow."
+        },
+        {
+          "id": "q35",
+          "type": "fill_in_blank",
+          "question_text": "Cross-attention key/value come from conditioning tokens of length ______.",
+          "correct_answer": "L",
+          "explanation": "Condition sequence length L defines K/V."
+        },
+        {
+          "id": "q36",
+          "type": "fill_in_blank",
+          "question_text": "Latent VAE KL term encourages q(z|x) to stay near ______.",
+          "correct_answer": "p(z) = N(0, I)",
+          "explanation": "Standard normal prior regularizes latents."
+        },
+        {
+          "id": "q37",
+          "type": "fill_in_blank",
+          "question_text": "Sinusoidal time embedding dimension is split into sin/cos pairs of increasing ______.",
+          "correct_answer": "frequencies",
+          "explanation": "Positional encoding uses harmonic scales."
+        },
+        {
+          "id": "q38",
+          "type": "fill_in_blank",
+          "question_text": "Attention memory cost on HxW tokens is O(______ ).",
+          "correct_answer": "(H*W)^2",
+          "explanation": "Full attention forms dense pairwise matrix."
+        },
+        {
+          "id": "q39",
+          "type": "fill_in_blank",
+          "question_text": "Decoder upsampling often uses nearest-neighbor followed by ______ to avoid checkerboard artifacts.",
+          "correct_answer": "a convolution",
+          "explanation": "Post-upsampling conv smooths artifacts."
+        },
+        {
+          "id": "q40",
+          "type": "fill_in_blank",
+          "question_text": "FiLM modulation uses scale and ______ parameters from conditioning.",
+          "correct_answer": "shift",
+          "explanation": "Scale-shift pair modulates activations."
+        }
+      ]
+    },
+    {
+      "section_id": "C",
+      "section_title": "Deep Theory & Coding",
+      "total_questions": 10,
+      "marking_scheme": { "correct": 4.0, "incorrect": -1.0 },
+      "questions": [
+        {
+          "id": "q41",
+          "type": "theory_open_ended",
+          "question_text": "Compare computational cost and receptive field of convolutions vs self-attention in diffusion U-Nets.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Conv cost O(HW k^2 C)",
+              "Attention cost O((HW)^2 C)",
+              "Convs give local receptive field; attention global",
+              "Hybrid design tradeoff memory vs context"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q42",
+          "type": "theory_open_ended",
+          "question_text": "Explain why skip connections in U-Net improve high-frequency detail reconstruction.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Skips bypass bottleneck information loss",
+              "Shallow features carry edges/textures",
+              "Concatenation/adding aids gradient flow",
+              "Empirical effect on FID/PSNR"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q43",
+          "type": "theory_open_ended",
+          "question_text": "Describe how cross-attention enables text-to-image conditioning in diffusion models.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Queries from image latents, keys/values from text encoder",
+              "Soft alignment of spatial positions to tokens",
+              "Influence on denoising predictions",
+              "Handling variable length tokens via masking"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q44",
+          "type": "theory_open_ended",
+          "question_text": "Outline the forward and backward passes of a residual block with GroupNorm and describe gradient stability benefits.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Pre/post norm, activation, convs",
+              "Identity addition",
+              "GroupNorm insensitivity to batch size",
+              "Eigenvalues near 1 improve gradient flow"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q45",
+          "type": "theory_open_ended",
+          "question_text": "Discuss latent-space VAEs vs pixel-space diffusion in terms of compute, capacity, and reconstruction error.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Latent reduces spatial size, lowers FLOPs",
+              "Quantization/autoencoder reconstruction loss impact",
+              "Capacity trade-offs in latent channels",
+              "Downstream sampling speed vs fidelity"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q46",
+          "type": "theory_open_ended",
+          "question_text": "How does multi-head attention mitigate head collapse and what regularizers help in diffusion architectures?",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Heads split dimensionality, encourage diversity",
+              "Regularizers: dropout, entropy, head scaling",
+              "Initialization/normalization effects",
+              "Empirical signs of collapse and fixes"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q47",
+          "type": "theory_open_ended",
+          "question_text": "Provide tensor shapes through a U-Net (B,C,H,W) with downsample factors [2,2,2] and channel multipliers [1,2,4].",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Stage1: (B,C,H,W)->(B,2C,H/2,W/2)",
+              "Stage2: (B,4C,H/4,W/4)",
+              "Bottleneck: (B,8C,H/8,W/8) if doubling again",
+              "Decoder mirrors with concat channel sums"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q48",
+          "type": "theory_open_ended",
+          "question_text": "Explain how FiLM-style conditioning differs from concatenation in diffusion blocks.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "FiLM scales/shifts activations without changing channels",
+              "Concatenation increases channel count",
+              "FiLM parameter-efficient and preserves spatial size",
+              "Impact on memory and conditioning strength"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q49",
+          "type": "theory_open_ended",
+          "question_text": "Detail how positional encodings are maintained through down/up-sampling in U-Net with attention.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Sinusoidal encodings added to tokens before attention",
+              "Downsample reduces resolution but positions preserved via skips",
+              "Reapply or interpolate encodings at each scale",
+              "Maintains spatial correspondence across depths"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q50",
+          "type": "theory_open_ended",
+          "question_text": "Describe initialization strategies for attention and residual blocks to stabilize early diffusion training.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Zero-init last conv in residual block",
+              "Scale attention output by small factor",
+              "Use Xavier/He on projections",
+              "Benefits: prevents large updates, keeps noise prediction near zero"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        }
+      ]
+    }
+  ]
+}

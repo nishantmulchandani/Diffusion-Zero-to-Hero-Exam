@@ -1,0 +1,665 @@
+{
+  "module_name": "04_Modern_Arch_DiT",
+  "difficulty_level": "Hard",
+  "rendering_note": "Math tokens appear as plain text (e.g., alpha_bar_t, sqrt(beta(t)), mu, sigma^2). Render them with LaTeX/KaTeX/MathJax in the frontend.",
+  "sections": [
+    {
+      "section_id": "A",
+      "section_title": "Conceptual Recall (MCQs)",
+      "total_questions": 20,
+      "marking_scheme": { "correct": 2.0, "incorrect": -0.5 },
+      "questions": [
+        {
+          "id": "q1",
+          "type": "mcq",
+          "question_text": "Patch embedding with patch size p on image (B,3,H,W) yields token count:",
+          "code_snippet": null,
+          "options": [
+            "A) H*W",
+            "B) (H/p)*(W/p)",
+            "C) (H+p)*(W+p)",
+            "D) (H*W)/p"
+          ],
+          "correct_option": "B",
+          "explanation": "Each non-overlapping patch becomes one token."
+        },
+        {
+          "id": "q2",
+          "type": "mcq",
+          "question_text": "AdaLN in DiT modulates normalized activations using:",
+          "code_snippet": null,
+          "options": [
+            "A) Bias only",
+            "B) Scale and shift predicted from timestep/condition",
+            "C) Dropout mask",
+            "D) Positional embeddings"
+          ],
+          "correct_option": "B",
+          "explanation": "Adaptive LayerNorm outputs gamma/beta from conditioning."
+        },
+        {
+          "id": "q3",
+          "type": "mcq",
+          "question_text": "ViT positional embeddings are commonly added:",
+          "code_snippet": null,
+          "options": [
+            "A) To queries only",
+            "B) To input tokens before transformer layers",
+            "C) To logits only",
+            "D) To keys only"
+          ],
+          "correct_option": "B",
+          "explanation": "Positional embeddings are summed with token embeddings upfront."
+        },
+        {
+          "id": "q4",
+          "type": "mcq",
+          "question_text": "In DiT for diffusion, timestep embedding typically conditions:",
+          "code_snippet": null,
+          "options": [
+            "A) Patch projection weights",
+            "B) AdaLN parameters in every block",
+            "C) Only final linear head",
+            "D) Only positional encodings"
+          ],
+          "correct_option": "B",
+          "explanation": "Timestep drives AdaLN scale/shift throughout blocks."
+        },
+        {
+          "id": "q5",
+          "type": "mcq",
+          "question_text": "Self-attention complexity in DiT with N tokens and dim d is:",
+          "code_snippet": null,
+          "options": [
+            "A) O(Nd)",
+            "B) O(N^2 d)",
+            "C) O(N log N)",
+            "D) O(d^2)"
+          ],
+          "correct_option": "B",
+          "explanation": "Pairwise token attention yields quadratic cost."
+        },
+        {
+          "id": "q6",
+          "type": "mcq",
+          "question_text": "Patchifying a latent feature map (B,C,H,W) with patch size p uses which projection shape?",
+          "code_snippet": null,
+          "options": [
+            "A) Linear(C*p*p -> d_model)",
+            "B) Conv1d(C->d_model, kernel=1)",
+            "C) Linear(C -> d_model)",
+            "D) RNN encoder"
+          ],
+          "correct_option": "A",
+          "explanation": "Flatten patch (C*p*p) then project to model dimension."
+        },
+        {
+          "id": "q7",
+          "type": "mcq",
+          "question_text": "Relative positional bias in attention is typically added to:",
+          "code_snippet": null,
+          "options": [
+            "A) Value matrix",
+            "B) Attention logits",
+            "C) Input embeddings",
+            "D) Output projection"
+          ],
+          "correct_option": "B",
+          "explanation": "Bias offsets logits based on relative positions."
+        },
+        {
+          "id": "q8",
+          "type": "mcq",
+          "question_text": "For DiT, why remove class token used in standard ViT?",
+          "code_snippet": null,
+          "options": [
+            "A) Reduces parameters only",
+            "B) Diffusion predicts per-token outputs; no classification pooling needed",
+            "C) Enforces translation equivariance",
+            "D) Adds positional bias"
+          ],
+          "correct_option": "B",
+          "explanation": "Outputs are spatial; class token unnecessary."
+        },
+        {
+          "id": "q9",
+          "type": "mcq",
+          "question_text": "Multi-head attention dimension per head equals:",
+          "code_snippet": null,
+          "options": [
+            "A) d_model / num_heads",
+            "B) d_model",
+            "C) num_heads / d_model",
+            "D) sqrt(d_model)"
+          ],
+          "correct_option": "A",
+          "explanation": "Channel dimension split evenly across heads."
+        },
+        {
+          "id": "q10",
+          "type": "mcq",
+          "question_text": "Rotary position embeddings (RoPE) modify:",
+          "code_snippet": null,
+          "options": [
+            "A) Softmax temperature",
+            "B) Query/key vectors by complex rotation",
+            "C) Value vectors directly",
+            "D) Token order"
+          ],
+          "correct_option": "B",
+          "explanation": "RoPE rotates Q/K to encode relative positions."
+        },
+        {
+          "id": "q11",
+          "type": "mcq",
+          "question_text": "DiT uses adaptive LayerNorm-zero to:",
+          "code_snippet": null,
+          "options": [
+            "A) Initialize residual modulation at zero for stability",
+            "B) Remove bias entirely",
+            "C) Freeze gradients",
+            "D) Enforce unit variance outputs"
+          ],
+          "correct_option": "A",
+          "explanation": "Zero-init scale/shift avoids large early updates."
+        },
+        {
+          "id": "q12",
+          "type": "mcq",
+          "question_text": "Patchify stride equals patch size primarily to:",
+          "code_snippet": null,
+          "options": [
+            "A) Overlap patches",
+            "B) Avoid overlap and simplify reshaping",
+            "C) Reduce token length",
+            "D) Increase receptive field"
+          ],
+          "correct_option": "B",
+          "explanation": "Non-overlapping patches align tokens with grid."
+        },
+        {
+          "id": "q13",
+          "type": "mcq",
+          "question_text": "Why is LayerNorm preferred over BatchNorm in transformers for diffusion?",
+          "code_snippet": null,
+          "options": [
+            "A) Faster on GPU",
+            "B) Invariant to batch size and sequence length",
+            "C) Reduces parameters",
+            "D) Removes need for bias"
+          ],
+          "correct_option": "B",
+          "explanation": "LN works with variable batch/sequence; BN needs batch statistics."
+        },
+        {
+          "id": "q14",
+          "type": "mcq",
+          "question_text": "In DiT blocks, MLP hidden dimension is often:",
+          "code_snippet": null,
+          "options": [
+            "A) d_model / 2",
+            "B) 4 * d_model",
+            "C) d_model",
+            "D) 2 * num_heads"
+          ],
+          "correct_option": "B",
+          "explanation": "Feed-forward expansion uses width multiplier (e.g., 4x)."
+        },
+        {
+          "id": "q15",
+          "type": "mcq",
+          "question_text": "Cross-attention in DiT image-conditioning uses queries from:",
+          "code_snippet": null,
+          "options": [
+            "A) Condition tokens",
+            "B) Latent tokens",
+            "C) Positional embeddings",
+            "D) Learned biases"
+          ],
+          "correct_option": "B",
+          "explanation": "Latent tokens attend to conditioning keys/values."
+        },
+        {
+          "id": "q16",
+          "type": "mcq",
+          "question_text": "Position encoding choice impacts:",
+          "code_snippet": null,
+          "options": [
+            "A) Only parameter count",
+            "B) Ability to generalize to unseen resolutions",
+            "C) Optimizer selection",
+            "D) Weight decay"
+          ],
+          "correct_option": "B",
+          "explanation": "Absolute embeddings lock resolution; relative/RoPE generalize better."
+        },
+        {
+          "id": "q17",
+          "type": "mcq",
+          "question_text": "LayerNorm applied to channels dimension expects input of shape:",
+          "code_snippet": null,
+          "options": [
+            "A) (B, C)",
+            "B) (B, N, C)",
+            "C) (C, B)",
+            "D) (B, N)"
+          ],
+          "correct_option": "B",
+          "explanation": "Transformers treat tokens as sequence dimension N."
+        },
+        {
+          "id": "q18",
+          "type": "mcq",
+          "question_text": "Why use shared positional embeddings across diffusion timesteps in DiT?",
+          "code_snippet": null,
+          "options": [
+            "A) Reduces memory only",
+            "B) Tokens remain on same spatial grid regardless of t",
+            "C) Needed for CFG",
+            "D) Matches VAE decoder"
+          ],
+          "correct_option": "B",
+          "explanation": "Spatial layout fixed; timestep conditioning handled via AdaLN."
+        },
+        {
+          "id": "q19",
+          "type": "mcq",
+          "question_text": "Patch size trade-off: larger patches ____ tokens but ____ local detail.",
+          "code_snippet": null,
+          "options": [
+            "A) increase; preserve",
+            "B) decrease; lose",
+            "C) decrease; improve",
+            "D) increase; lose"
+          ],
+          "correct_option": "B",
+          "explanation": "Fewer tokens reduce compute but blur fine features."
+        },
+        {
+          "id": "q20",
+          "type": "mcq",
+          "question_text": "In DiT, output head reshapes token outputs back to:",
+          "code_snippet": null,
+          "options": [
+            "A) 1D sequence only",
+            "B) 2D latent grid matching patch layout",
+            "C) Scalar per token",
+            "D) Class logits"
+          ],
+          "correct_option": "B",
+          "explanation": "Tokens are reassembled into spatial latent map."
+        }
+      ]
+    },
+    {
+      "section_id": "B",
+      "section_title": "Logic & Implementation Puzzles",
+      "total_questions": 20,
+      "marking_scheme": { "correct": 2.0, "incorrect": -0.5 },
+      "questions": [
+        {
+          "id": "q21",
+          "type": "parsons_problem",
+          "question_text": "Arrange to patchify an image tensor x (B,3,H,W) with patch size p.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "x = x.reshape(B, 3, H//p, p, W//p, p)" },
+            { "id": "b2", "text": "tokens = proj(x)" },
+            { "id": "b3", "text": "x = x.permute(0,2,4,3,5,1).reshape(B, -1, 3*p*p)" },
+            { "id": "b4", "text": "def patchify(x, proj, p):" },
+            { "id": "b5", "text": "B, _, H, W = x.shape" },
+            { "id": "b6", "text": "return tokens" }
+          ],
+          "correct_order": ["b4", "b5", "b1", "b3", "b2", "b6"],
+          "explanation": "Reshape into patches, flatten channels, project to tokens."
+        },
+        {
+          "id": "q22",
+          "type": "parsons_problem",
+          "question_text": "Arrange AdaLN modulation of normalized hidden h using embedding m.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "gamma, beta = torch.chunk(mlp(m), 2, dim=-1)" },
+            { "id": "b2", "text": "h = ln(h)" },
+            { "id": "b3", "text": "h = h * (1 + gamma) + beta" },
+            { "id": "b4", "text": "def ada_ln(h, m):" },
+            { "id": "b5", "text": "return h" }
+          ],
+          "correct_order": ["b4", "b2", "b1", "b3", "b5"],
+          "explanation": "Normalize, then scale and shift by conditioning."
+        },
+        {
+          "id": "q23",
+          "type": "parsons_problem",
+          "question_text": "Arrange rotary embedding application on q,k.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "q_rot, k_rot = apply_rope(q, k, freqs)" },
+            { "id": "b2", "text": "return q_rot, k_rot" },
+            { "id": "b3", "text": "def rope(q, k, freqs):" }
+          ],
+          "correct_order": ["b3", "b1", "b2"],
+          "explanation": "RoPE rotates queries/keys using frequency matrix."
+        },
+        {
+          "id": "q24",
+          "type": "parsons_problem",
+          "question_text": "Arrange to add learnable positional embeddings to tokens.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "pos = pos_emb[:, : tokens.size(1), :]" },
+            { "id": "b2", "text": "tokens = tokens + pos" },
+            { "id": "b3", "text": "def add_pos(tokens, pos_emb):" },
+            { "id": "b4", "text": "return tokens" }
+          ],
+          "correct_order": ["b3", "b1", "b2", "b4"],
+          "explanation": "Slice positional table to sequence length and add."
+        },
+        {
+          "id": "q25",
+          "type": "parsons_problem",
+          "question_text": "Arrange to reshape tokens back to latent map.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "B, N, C = tokens.shape" },
+            { "id": "b2", "text": "h = tokens.reshape(B, H, W, C).permute(0,3,1,2)" },
+            { "id": "b3", "text": "def depatchify(tokens, H, W):" },
+            { "id": "b4", "text": "return h" }
+          ],
+          "correct_order": ["b3", "b1", "b2", "b4"],
+          "explanation": "Reshape sequence back to 2D grid."
+        },
+        {
+          "id": "q26",
+          "type": "parsons_problem",
+          "question_text": "Arrange to compute attention with relative bias table.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "attn = (q @ k.transpose(-2,-1)) * scale" },
+            { "id": "b2", "text": "attn = attn + bias[index]" },
+            { "id": "b3", "text": "attn = attn.softmax(-1)" },
+            { "id": "b4", "text": "out = attn @ v" },
+            { "id": "b5", "text": "def attn_bias(q, k, v, bias, index, scale):" },
+            { "id": "b6", "text": "return out" }
+          ],
+          "correct_order": ["b5", "b1", "b2", "b3", "b4", "b6"],
+          "explanation": "Bias adjusts logits before softmax."
+        },
+        {
+          "id": "q27",
+          "type": "parsons_problem",
+          "question_text": "Arrange to build timestep embedding then project for AdaLN.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "emb = sinusoidal(t)" },
+            { "id": "b2", "text": "emb = mlp(emb)" },
+            { "id": "b3", "text": "return emb" },
+            { "id": "b4", "text": "def time_embed(t):" }
+          ],
+          "correct_order": ["b4", "b1", "b2", "b3"],
+          "explanation": "Sinusoidal then learned projection to AdaLN width."
+        },
+        {
+          "id": "q28",
+          "type": "parsons_problem",
+          "question_text": "Arrange forward pass of a DiT block (attention then MLP) with residuals.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "x = x + attn(ada_ln1(x, t_emb))" },
+            { "id": "b2", "text": "x = x + mlp(ada_ln2(x, t_emb))" },
+            { "id": "b3", "text": "def dit_block(x, t_emb):" },
+            { "id": "b4", "text": "return x" }
+          ],
+          "correct_order": ["b3", "b1", "b2", "b4"],
+          "explanation": "Pre-norm with AdaLN, attention, then MLP with residuals."
+        },
+        {
+          "id": "q29",
+          "type": "parsons_problem",
+          "question_text": "Arrange to split QKV projection from tokens.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "qkv = proj(tokens)" },
+            { "id": "b2", "text": "q, k, v = qkv.chunk(3, dim=-1)" },
+            { "id": "b3", "text": "def qkv_split(tokens, proj):" },
+            { "id": "b4", "text": "return q, k, v" }
+          ],
+          "correct_order": ["b3", "b1", "b2", "b4"],
+          "explanation": "Linear projection yields concatenated QKV then chunk."
+        },
+        {
+          "id": "q30",
+          "type": "parsons_problem",
+          "question_text": "Arrange to apply dropout to attention weights.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "attn = dropout(attn)" },
+            { "id": "b2", "text": "attn = attn.softmax(-1)" },
+            { "id": "b3", "text": "def drop_attn(attn, dropout):" },
+            { "id": "b4", "text": "return attn" }
+          ],
+          "correct_order": ["b3", "b2", "b1", "b4"],
+          "explanation": "Softmax before dropout keeps probabilities normalized."
+        },
+        {
+          "id": "q31",
+          "type": "fill_in_blank",
+          "question_text": "Tokens per side for patch size p on square image H=W is H / ______.",
+          "correct_answer": "p",
+          "explanation": "Non-overlapping patches divide dimension by patch size."
+        },
+        {
+          "id": "q32",
+          "type": "fill_in_blank",
+          "question_text": "AdaLN applies (x - mean)/sqrt(var+eps) then scales by ______ and shifts by beta.",
+          "correct_answer": "1 + gamma",
+          "explanation": "Gamma produced from conditioning adjusts normalized activations."
+        },
+        {
+          "id": "q33",
+          "type": "fill_in_blank",
+          "question_text": "RoPE rotates Q and K by sinusoidal angles derived from ______.",
+          "correct_answer": "token positions",
+          "explanation": "Relative position encodes via complex rotations."
+        },
+        {
+          "id": "q34",
+          "type": "fill_in_blank",
+          "question_text": "MLP hidden width is often set to ______ times d_model.",
+          "correct_answer": "4",
+          "explanation": "Standard transformer expansion ratio."
+        },
+        {
+          "id": "q35",
+          "type": "fill_in_blank",
+          "question_text": "Relative positional bias is added to attention ______ before softmax.",
+          "correct_answer": "logits",
+          "explanation": "Bias alters scores, not values."
+        },
+        {
+          "id": "q36",
+          "type": "fill_in_blank",
+          "question_text": "LayerNorm normalizes across the ______ dimension(s) per token.",
+          "correct_answer": "channel",
+          "explanation": "LN operates on feature dimension."
+        },
+        {
+          "id": "q37",
+          "type": "fill_in_blank",
+          "question_text": "Patch projection flattens C*p*p features then applies a ______ layer.",
+          "correct_answer": "linear",
+          "explanation": "Linear maps flattened patch to token dimension."
+        },
+        {
+          "id": "q38",
+          "type": "fill_in_blank",
+          "question_text": "Attention temperature scaling uses factor 1 / ______.",
+          "correct_answer": "sqrt(d_k)",
+          "explanation": "Prevents large logits for high dimensions."
+        },
+        {
+          "id": "q39",
+          "type": "fill_in_blank",
+          "question_text": "Removing CLS token requires using only the ______ tokens for decoding.",
+          "correct_answer": "patch",
+          "explanation": "All tokens correspond to spatial patches."
+        },
+        {
+          "id": "q40",
+          "type": "fill_in_blank",
+          "question_text": "Absolute positional embeddings are typically learned parameters of shape (1, N, ______).",
+          "correct_answer": "d_model",
+          "explanation": "Match token dimension for addition."
+        }
+      ]
+    },
+    {
+      "section_id": "C",
+      "section_title": "Deep Theory & Coding",
+      "total_questions": 10,
+      "marking_scheme": { "correct": 4.0, "incorrect": -1.0 },
+      "questions": [
+        {
+          "id": "q41",
+          "type": "theory_open_ended",
+          "question_text": "Compare AdaLN conditioning in DiT with FiLM in U-Nets. Discuss parameter efficiency and gradient flow.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Both use scale/shift modulation from conditioning",
+              "AdaLN applies after normalization in transformer blocks",
+              "FiLM often applied in conv blocks; AdaLN uses fewer parameters per block",
+              "Normalization ensures stable gradients for long-depth transformers"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q42",
+          "type": "theory_open_ended",
+          "question_text": "Analyze computational trade-offs of patch size choice in DiT for diffusion over latents.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Larger patches reduce token count, quadratic attention cost drops",
+              "But lose high-frequency detail; need stronger decoder",
+              "Smaller patches increase compute but capture detail",
+              "Optimal patch ties to latent resolution and model width"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q43",
+          "type": "theory_open_ended",
+          "question_text": "Explain how RoPE enables relative position awareness and why it's beneficial for variable image sizes.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Complex rotation encodes distances",
+              "Relative property generalizes to longer sequences",
+              "Avoids fixed absolute tables tied to resolution",
+              "Helps DiT adapt to varying latent grid sizes"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q44",
+          "type": "theory_open_ended",
+          "question_text": "Derive attention output shape given tokens (B,N,d) and heads h; show reshaping steps.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Split d into h heads: (B,h,N,d_h)",
+              "Compute attention -> (B,h,N,N)",
+              "Multiply by V -> (B,h,N,d_h)",
+              "Concat heads -> (B,N,d) then project"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q45",
+          "type": "theory_open_ended",
+          "question_text": "Discuss initialization of AdaLN (zero) and its effect on early diffusion training dynamics.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Zero gamma/beta keeps residual outputs near zero initially",
+              "Prevents large deviations from noise prediction baseline",
+              "Gradually learns conditioning strength",
+              "Stabilizes deep transformer convergence"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q46",
+          "type": "theory_open_ended",
+          "question_text": "Explain why DiT typically omits convolutions entirely and the implication for inductive biases.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Pure transformer relies on attention for mixing",
+              "Less local inductive bias than convs; requires more data or positional info",
+              "Flexibility across resolutions",
+              "Patch embedding supplies minimal spatial prior"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q47",
+          "type": "theory_open_ended",
+          "question_text": "Compare absolute vs relative positional encodings for DiT in handling shifted or cropped images.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Absolute encodings tied to fixed grid; shift causes mismatch",
+              "Relative/RoPE encode distances, more shift/crop tolerant",
+              "Impact on generalization across aspect ratios",
+              "Potential need for interpolation for absolute embeddings"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q48",
+          "type": "theory_open_ended",
+          "question_text": "Outline how cross-attention integrates non-text conditions (e.g., depth maps) in DiT and discuss tokenization choices.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Condition tokens derived from encoder of modality (depth/segmentation)",
+              "Keys/values from condition, queries from latent tokens",
+              "Tokenization choices: patchify maps or project features",
+              "Masking and positional alignment for spatial modalities"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q49",
+          "type": "theory_open_ended",
+          "question_text": "Detail computational graph for one DiT block with AdaLN and identify where timestep embedding enters.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Input tokens -> AdaLN (conditioned on t_emb) -> attention -> residual",
+              "Second AdaLN (t_emb) -> MLP -> residual",
+              "t_emb processed by MLP to produce gamma/beta per AdaLN",
+              "No batch-dependent statistics"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q50",
+          "type": "theory_open_ended",
+          "question_text": "Argue when patch overlapping could benefit DiT diffusion and when it may harm training.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Overlap increases token count and redundancy",
+              "May capture finer detail and smooth boundaries",
+              "Increases quadratic attention cost and correlation",
+              "Could harm if redundancy leads to overfitting or inefficiency"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,666 @@
+{
+  "module_name": "13_End_to_End_Training_Pipelines",
+  "difficulty_level": "Hard",
+  "rendering_note": "Math tokens appear as plain text (e.g., alpha_bar_t, sqrt(beta(t)), mu, sigma^2). Render them with LaTeX/KaTeX/MathJax in the frontend.",
+  "sections": [
+    {
+      "section_id": "A",
+      "section_title": "Conceptual Recall (MCQs)",
+      "total_questions": 20,
+      "marking_scheme": { "correct": 2.0, "incorrect": -0.5 },
+      "questions": [
+        {
+          "id": "q1",
+          "type": "mcq",
+          "question_text": "A minimal diffusion training loop requires which three core components?",
+          "code_snippet": null,
+          "options": [
+            "A) Text tokenizer, sampler, VAE decoder only",
+            "B) Data loader, noise scheduler, denoiser model with optimizer",
+            "C) Optimizer, renderer, tokenizer",
+            "D) Only a sampler and UNet"
+          ],
+          "correct_option": "B",
+          "explanation": "Need data, schedule to sample timesteps/noise, model+opt to learn."
+        },
+        {
+          "id": "q2",
+          "type": "mcq",
+          "question_text": "Beta schedules during training typically stay:",
+          "code_snippet": null,
+          "options": [
+            "A) Fixed; inference can reschedule but training uses a chosen schedule",
+            "B) Random every batch",
+            "C) Learned by the model",
+            "D) Determined by tokenizer"
+          ],
+          "correct_option": "A",
+          "explanation": "Training uses a fixed schedule; inference may use stepped subsets."
+        },
+        {
+          "id": "q3",
+          "type": "mcq",
+          "question_text": "Typical training objective for noise prediction UNet is:",
+          "code_snippet": null,
+          "options": [
+            "A) Cross-entropy on tokens",
+            "B) MSE between predicted eps and sampled eps",
+            "C) KL to prior only",
+            "D) Perceptual loss only"
+          ],
+          "correct_option": "B",
+          "explanation": "Standard DDPM/latent diffusion uses eps MSE (or v)."
+        },
+        {
+          "id": "q4",
+          "type": "mcq",
+          "question_text": "To train classifier-free guidance without extra models you must:",
+          "code_snippet": null,
+          "options": [
+            "A) Train two separate UNets",
+            "B) Randomly drop conditions (text/control) in batches",
+            "C) Remove timestep embedding",
+            "D) Freeze UNet"
+          ],
+          "correct_option": "B",
+          "explanation": "Condition dropout gives unconditional branch."
+        },
+        {
+          "id": "q5",
+          "type": "mcq",
+          "question_text": "Gradient accumulation is used to:",
+          "code_snippet": null,
+          "options": [
+            "A) Reduce epochs",
+            "B) Simulate larger batch under memory limits by delaying optimizer steps",
+            "C) Change beta schedule",
+            "D) Freeze attention layers"
+          ],
+          "correct_option": "B",
+          "explanation": "Accumulate microbatch grads then step."
+        },
+        {
+          "id": "q6",
+          "type": "mcq",
+          "question_text": "EMA weights are typically updated:",
+          "code_snippet": null,
+          "options": [
+            "A) Every epoch",
+            "B) Every optimizer step with decay close to 1",
+            "C) Only at the end",
+            "D) On validation batches only"
+          ],
+          "correct_option": "B",
+          "explanation": "EMA tracked each step for smoother inference."
+        },
+        {
+          "id": "q7",
+          "type": "mcq",
+          "question_text": "When using latents (e.g., Stable Diffusion), the image preprocessing includes:",
+          "code_snippet": null,
+          "options": [
+            "A) Cropping only",
+            "B) Scaling to [0,1] then to [-1,1] and VAE encoding to z with scaling constant",
+            "C) Tokenizing image",
+            "D) FFT"
+          ],
+          "correct_option": "B",
+          "explanation": "Normalize and pass through VAE encoder then scale latents."
+        },
+        {
+          "id": "q8",
+          "type": "mcq",
+          "question_text": "Common failure when forgetting to set model to train mode:",
+          "code_snippet": null,
+          "options": [
+            "A) Faster convergence",
+            "B) Dropout/LayerNorm running stats incorrect, hurting training",
+            "C) Lower VRAM",
+            "D) Better EMA"
+          ],
+          "correct_option": "B",
+          "explanation": "Must call model.train() for correct behavior."
+        },
+        {
+          "id": "q9",
+          "type": "mcq",
+          "question_text": "Timestep sampling during training is often:",
+          "code_snippet": null,
+          "options": [
+            "A) Fixed sequentially",
+            "B) Uniform random or weighted by importance (e.g., log SNR)",
+            "C) Determined by tokenizer",
+            "D) Only t=0"
+          ],
+          "correct_option": "B",
+          "explanation": "Random timestep selection covers full noise range."
+        },
+        {
+          "id": "q10",
+          "type": "mcq",
+          "question_text": "Loss weighting by 1/SNR mainly:",
+          "code_snippet": null,
+          "options": [
+            "A) Disables training",
+            "B) Emphasizes high-noise steps to balance gradients",
+            "C) Emphasizes low-noise steps",
+            "D) Changes beta_t"
+          ],
+          "correct_option": "B",
+          "explanation": "Inverse SNR upweights noisy steps."
+        },
+        {
+          "id": "q11",
+          "type": "mcq",
+          "question_text": "Training step reproducibility requires fixing:",
+          "code_snippet": null,
+          "options": [
+            "A) Only random seed",
+            "B) Seeds, deterministic flags, and controlling worker randomness",
+            "C) Beta schedule",
+            "D) Token length"
+          ],
+          "correct_option": "B",
+          "explanation": "Determinism requires seeding all sources and possibly deterministic kernels."
+        },
+        {
+          "id": "q12",
+          "type": "mcq",
+          "question_text": "Logging sample previews during training helps:",
+          "code_snippet": null,
+          "options": [
+            "A) Reduce loss",
+            "B) Track qualitative progress and catch collapse early",
+            "C) Reduce VRAM",
+            "D) Speed training"
+          ],
+          "correct_option": "B",
+          "explanation": "Periodic samples reveal qualitative issues."
+        },
+        {
+          "id": "q13",
+          "type": "mcq",
+          "question_text": "Distributed data parallel (DDP) requires:",
+          "code_snippet": null,
+          "options": [
+            "A) No setup",
+            "B) Proper initialization, synchronized gradients, and per-rank dataloaders",
+            "C) Single GPU only",
+            "D) Mixed precision disabled"
+          ],
+          "correct_option": "B",
+          "explanation": "DDP needs init process group and rank-aware loaders."
+        },
+        {
+          "id": "q14",
+          "type": "mcq",
+          "question_text": "Gradient scaling (AMP) is used to:",
+          "code_snippet": null,
+          "options": [
+            "A) Increase beta",
+            "B) Prevent underflow/overflow in mixed precision",
+            "C) Change LR",
+            "D) Prune model"
+          ],
+          "correct_option": "B",
+          "explanation": "AMP scales loss to keep gradients numerically stable."
+        },
+        {
+          "id": "q15",
+          "type": "mcq",
+          "question_text": "Noise schedule mismatch between train and inference can cause:",
+          "code_snippet": null,
+          "options": [
+            "A) Faster training",
+            "B) Quality loss unless inference reschedules timesteps appropriately",
+            "C) Better CLIP score",
+            "D) Higher batch size"
+          ],
+          "correct_option": "B",
+          "explanation": "Inference timesteps should map to training alpha_bar distribution."
+        },
+        {
+          "id": "q16",
+          "type": "mcq",
+          "question_text": "Checkpoints should include:",
+          "code_snippet": null,
+          "options": [
+            "A) Only model weights",
+            "B) Model, optimizer, EMA, scheduler state, and training step",
+            "C) Tokenizer only",
+            "D) VAE only"
+          ],
+          "correct_option": "B",
+          "explanation": "Restoring training needs all states."
+        },
+        {
+          "id": "q17",
+          "type": "mcq",
+          "question_text": "Clip gradients before optimizer step to:",
+          "code_snippet": null,
+          "options": [
+            "A) Increase speed",
+            "B) Prevent exploding updates on rare large gradients",
+            "C) Change beta",
+            "D) Remove EMA"
+          ],
+          "correct_option": "B",
+          "explanation": "Clipping stabilizes training."
+        },
+        {
+          "id": "q18",
+          "type": "mcq",
+          "question_text": "Saving VAE separately is useful because:",
+          "code_snippet": null,
+          "options": [
+            "A) VAE never changes",
+            "B) It may be frozen or shared across checkpoints; separate weights reduce duplication",
+            "C) It reduces batch size",
+            "D) It changes CFG"
+          ],
+          "correct_option": "B",
+          "explanation": "Separate VAE allows reuse and lighter checkpoints."
+        },
+        {
+          "id": "q19",
+          "type": "mcq",
+          "question_text": "Validation prompt set should be:",
+          "code_snippet": null,
+          "options": [
+            "A) Identical to train captions",
+            "B) Representative and fixed for tracking progress over time",
+            "C) Random every step",
+            "D) Only a single prompt"
+          ],
+          "correct_option": "B",
+          "explanation": "Fixed diverse prompts allow consistent monitoring."
+        },
+        {
+          "id": "q20",
+          "type": "mcq",
+          "question_text": "Training from scratch vs fine-tuning differs mainly in:",
+          "code_snippet": null,
+          "options": [
+            "A) Need for large dataset and longer schedules for scratch; fine-tune uses pretrained weights and smaller LR/schedule",
+            "B) Beta schedule only",
+            "C) Token length",
+            "D) VAE size"
+          ],
+          "correct_option": "A",
+          "explanation": "Scratch needs more data/time; fine-tune uses lower LR and shorter schedules."
+        }
+      ]
+    },
+    {
+      "section_id": "B",
+      "section_title": "Logic & Implementation Puzzles",
+      "total_questions": 20,
+      "marking_scheme": { "correct": 2.0, "incorrect": -0.5 },
+      "questions": [
+        {
+          "id": "q21",
+          "type": "parsons_problem",
+          "question_text": "Arrange a basic diffusion training step (eps MSE).",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "eps = torch.randn_like(x0)" },
+            { "id": "b2", "text": "t = torch.randint(0, T, (B,), device=x0.device)" },
+            { "id": "b3", "text": "x_t = q_sample(x0, t, eps, alpha_bar)" },
+            { "id": "b4", "text": "pred = model(x_t, t, cond)" },
+            { "id": "b5", "text": "loss = F.mse_loss(pred, eps)" },
+            { "id": "b6", "text": "def train_step(model, x0, cond, alpha_bar):" },
+            { "id": "b7", "text": "return loss" }
+          ],
+          "correct_order": ["b6", "b2", "b1", "b3", "b4", "b5", "b7"],
+          "explanation": "Sample t/eps, noising, predict, MSE."
+        },
+        {
+          "id": "q22",
+          "type": "parsons_problem",
+          "question_text": "Arrange EMA update after optimizer step.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "for e_p, p in zip(ema.parameters(), model.parameters()):" },
+            { "id": "b2", "text": "    e_p.data.mul_(decay).add_(p.data, alpha=1-decay)" },
+            { "id": "b3", "text": "def ema_update(model, ema, decay):" },
+            { "id": "b4", "text": "return ema" }
+          ],
+          "correct_order": ["b3", "b1", "b2", "b4"],
+          "explanation": "Standard EMA smoothing."
+        },
+        {
+          "id": "q23",
+          "type": "parsons_problem",
+          "question_text": "Arrange mixed precision training step with gradient scaling.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "with torch.cuda.amp.autocast():\n    loss = compute_loss()" },
+            { "id": "b2", "text": "scaler.scale(loss).backward()" },
+            { "id": "b3", "text": "scaler.step(opt)" },
+            { "id": "b4", "text": "scaler.update(); opt.zero_grad()" },
+            { "id": "b5", "text": "def train_amp(opt, scaler):" }
+          ],
+          "correct_order": ["b5", "b1", "b2", "b3", "b4"],
+          "explanation": "AMP: autocast, scale/backward, step, update."
+        },
+        {
+          "id": "q24",
+          "type": "parsons_problem",
+          "question_text": "Arrange classifier-free training dropout for text.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "mask = torch.rand(B, device=text.device) < p" },
+            { "id": "b2", "text": "text[mask] = null_token" },
+            { "id": "b3", "text": "return text" },
+            { "id": "b4", "text": "def drop_text(text, p, null_token):" }
+          ],
+          "correct_order": ["b4", "b1", "b2", "b3"],
+          "explanation": "Drop some prompts to null."
+        },
+        {
+          "id": "q25",
+          "type": "parsons_problem",
+          "question_text": "Arrange to save checkpoint with EMA and optimizer states.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "torch.save({\"model\": model.state_dict(), \"ema\": ema.state_dict(), \"opt\": opt.state_dict(), \"step\": step}, path)" },
+            { "id": "b2", "text": "def save_ckpt(model, ema, opt, step, path):" },
+            { "id": "b3", "text": "return path" }
+          ],
+          "correct_order": ["b2", "b1", "b3"],
+          "explanation": "Save relevant states."
+        },
+        {
+          "id": "q26",
+          "type": "parsons_problem",
+          "question_text": "Arrange to sample validation images with fixed prompts and seeds.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "torch.manual_seed(seed)" },
+            { "id": "b2", "text": "imgs.append(sample_fn(prompt))" },
+            { "id": "b3", "text": "return imgs" },
+            { "id": "b4", "text": "def val_samples(prompts, seed, sample_fn):" },
+            { "id": "b5", "text": "imgs = []" }
+          ],
+          "correct_order": ["b4", "b1", "b5", "b2", "b3"],
+          "explanation": "Deterministic validation sampling."
+        },
+        {
+          "id": "q27",
+          "type": "parsons_problem",
+          "question_text": "Arrange DDP-safe dataloader seeding.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "def worker_init_fn(worker_id):\n    seed = base_seed + worker_id\n    np.random.seed(seed); random.seed(seed)" },
+            { "id": "b2", "text": "return DataLoader(dataset, worker_init_fn=worker_init_fn)" },
+            { "id": "b3", "text": "def make_loader(dataset, base_seed):" }
+          ],
+          "correct_order": ["b3", "b1", "b2"],
+          "explanation": "Per-worker seeds for reproducibility."
+        },
+        {
+          "id": "q28",
+          "type": "parsons_problem",
+          "question_text": "Arrange to clip gradients by norm before step.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm)" },
+            { "id": "b2", "text": "opt.step()" },
+            { "id": "b3", "text": "def step_with_clip(model, opt, max_norm):" },
+            { "id": "b4", "text": "opt.zero_grad()" }
+          ],
+          "correct_order": ["b3", "b1", "b2", "b4"],
+          "explanation": "Clip before stepping, then zero grad."
+        },
+        {
+          "id": "q29",
+          "type": "parsons_problem",
+          "question_text": "Arrange to compute SNR for weighting.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "snr = alpha_bar / (1 - alpha_bar)" },
+            { "id": "b2", "text": "return snr" },
+            { "id": "b3", "text": "def snr_from_alpha(alpha_bar):" }
+          ],
+          "correct_order": ["b3", "b1", "b2"],
+          "explanation": "SNR formula."
+        },
+        {
+          "id": "q30",
+          "type": "parsons_problem",
+          "question_text": "Arrange training resume from checkpoint.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "ckpt = torch.load(path, map_location=device)" },
+            { "id": "b2", "text": "model.load_state_dict(ckpt['model'])" },
+            { "id": "b3", "text": "opt.load_state_dict(ckpt['opt'])" },
+            { "id": "b4", "text": "ema.load_state_dict(ckpt['ema'])" },
+            { "id": "b5", "text": "step = ckpt['step']" },
+            { "id": "b6", "text": "return step" },
+            { "id": "b7", "text": "def load_ckpt(model, ema, opt, path, device):" }
+          ],
+          "correct_order": ["b7", "b1", "b2", "b4", "b3", "b5", "b6"],
+          "explanation": "Load all states and step count."
+        },
+        {
+          "id": "q31",
+          "type": "fill_in_blank",
+          "question_text": "Classifier-free training uses random ______ of conditions.",
+          "correct_answer": "dropout",
+          "explanation": "Drop conditions to learn unconditional branch."
+        },
+        {
+          "id": "q32",
+          "type": "fill_in_blank",
+          "question_text": "EMA decay close to ______ yields smoother but slower-updating weights.",
+          "correct_answer": "1",
+          "explanation": "High decay averages over long window."
+        },
+        {
+          "id": "q33",
+          "type": "fill_in_blank",
+          "question_text": "Gradient accumulation delays optimizer steps to simulate larger ______.",
+          "correct_answer": "batch size",
+          "explanation": "Accumulate gradients across microbatches."
+        },
+        {
+          "id": "q34",
+          "type": "fill_in_blank",
+          "question_text": "Mixed precision training uses gradient ______ to avoid underflow.",
+          "correct_answer": "scaling",
+          "explanation": "Scale loss before backward."
+        },
+        {
+          "id": "q35",
+          "type": "fill_in_blank",
+          "question_text": "Saving optimizer state allows exact training ______.",
+          "correct_answer": "resume/continuation",
+          "explanation": "Optimizer state needed to continue."
+        },
+        {
+          "id": "q36",
+          "type": "fill_in_blank",
+          "question_text": "Noise prediction loss is usually ______ loss between predicted and sampled eps.",
+          "correct_answer": "MSE",
+          "explanation": "Mean squared error."
+        },
+        {
+          "id": "q37",
+          "type": "fill_in_blank",
+          "question_text": "Random timestep sampling ensures coverage of the entire ______ range.",
+          "correct_answer": "noise/timestep",
+          "explanation": "Sample across all t."
+        },
+        {
+          "id": "q38",
+          "type": "fill_in_blank",
+          "question_text": "Checkpoint should store the current training ______ number.",
+          "correct_answer": "step",
+          "explanation": "Track step for resume/schedule."
+        },
+        {
+          "id": "q39",
+          "type": "fill_in_blank",
+          "question_text": "Setting model.train() enables layers like ______ to behave correctly.",
+          "correct_answer": "dropout/BatchNorm",
+          "explanation": "Train mode toggles dropout/BN."
+        },
+        {
+          "id": "q40",
+          "type": "fill_in_blank",
+          "question_text": "Validation prompts should remain ______ for consistent comparisons.",
+          "correct_answer": "fixed",
+          "explanation": "Fixed prompts track progress."
+        }
+      ]
+    },
+    {
+      "section_id": "C",
+      "section_title": "Deep Theory & Coding",
+      "total_questions": 10,
+      "marking_scheme": { "correct": 4.0, "incorrect": -1.0 },
+      "questions": [
+        {
+          "id": "q41",
+          "type": "theory_open_ended",
+          "question_text": "Derive the training objective for epsilon prediction in DDPM/latent diffusion and explain why it upper bounds negative log-likelihood.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Start from ELBO decomposition",
+              "Show KL terms reduce to eps MSE under Gaussian assumptions",
+              "Connect to variational bound on log p(x0)",
+              "Discuss assumptions (fixed variance, reweighting)"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q42",
+          "type": "theory_open_ended",
+          "question_text": "Explain how to build a full training loop for latent diffusion (Stable Diffusion style) including data pipeline, VAE encode/decode, and conditioning.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Data load -> normalize -> VAE encode -> scale latents",
+              "Tokenize text with padding/mask; dropout for CFG",
+              "Sample t, eps, form x_t; predict eps; compute loss",
+              "Optimizer/EMA/logging/checkpoint details"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q43",
+          "type": "theory_open_ended",
+          "question_text": "Compare v-prediction vs eps prediction in training: weighting, stability, and inference mapping.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "v mixes signal/noise, more uniform variance",
+              "Loss weighting differences",
+              "Conversion between v and eps/x0 for sampling",
+              "Empirical stability benefits"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q44",
+          "type": "theory_open_ended",
+          "question_text": "Design a reproducible training setup: list seeds, deterministic settings, dataloader behavior, and how to validate determinism.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Seed torch/random/numpy, set deterministic flags",
+              "Control cudnn benchmark, use worker_init_fn",
+              "Fix validation prompts/seeds",
+              "Test reproducibility over runs"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q45",
+          "type": "theory_open_ended",
+          "question_text": "Discuss curriculum or importance sampling over timesteps (e.g., log SNR weighting). When can it help or hurt?",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Weighted timestep sampling emphasizes challenging/noisy steps",
+              "Can balance gradient scales",
+              "May undertrain certain regions if misweighted",
+              "Empirical tuning and schedule choice"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q46",
+          "type": "theory_open_ended",
+          "question_text": "Explain how to integrate DDP/ZeRO for large-scale diffusion training, including pitfalls with EMA and randomness.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Init process groups, shard optimizer (ZeRO)",
+              "Ensure EMA synced or kept on rank0",
+              "Handle randomness per-rank and dataloader sharding",
+              "Checkpointing across ranks"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q47",
+          "type": "theory_open_ended",
+          "question_text": "Provide a minimal PyTorch pseudo-code for a diffusion training loop with mixed precision and checkpointing.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Pseudo-code with dataloader, autocast, scaler, loss, backward, step, ema",
+              "Checkpoint saving",
+              "Handling of t/eps sampling",
+              "Brief, runnable structure"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q48",
+          "type": "theory_open_ended",
+          "question_text": "Analyze how validation prompt sets and metrics should evolve during training to detect overfitting or underfitting.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Fixed core set for comparability",
+              "Optional periodic expansion or challenging prompts",
+              "Track losses/metrics and visual drift",
+              "Signs of overfit: degraded diversity, specific prompts improve while others worsen"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q49",
+          "type": "theory_open_ended",
+          "question_text": "Explain the role of the VAE in latent diffusion training and how VAE quality limits downstream diffusion quality.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "VAE encodes/decodes latents; reconstruction error bounds quality",
+              "Artifacts propagate into diffusion training",
+              "Scaling constant and variance assumptions",
+              "Possible improvements with better autoencoders"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q50",
+          "type": "theory_open_ended",
+          "question_text": "Propose a debugging checklist for training failures (loss explosion, NaNs, bad samples) in diffusion.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Check LR, gradient clipping, AMP overflow, beta schedule",
+              "Verify normalization and latent scaling, model.train() mode",
+              "Inspect samples, logs, reduce batch, test single batch",
+              "Check seed/dataloader, hardware errors"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        }
+      ]
+    }
+  ]
+}

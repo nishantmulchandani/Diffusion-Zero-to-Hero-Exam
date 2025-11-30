@@ -1,0 +1,662 @@
+{
+  "module_name": "01_Foundations_of_Diffusion",
+  "difficulty_level": "Hard",
+  "rendering_note": "Math tokens appear as plain text (e.g., alpha_bar_t, sqrt(beta(t)), mu, sigma^2). Render them with LaTeX/KaTeX/MathJax in the frontend.",
+  "sections": [
+    {
+      "section_id": "A",
+      "section_title": "Conceptual Recall (MCQs)",
+      "total_questions": 20,
+      "marking_scheme": { "correct": 2.0, "incorrect": -0.5 },
+      "questions": [
+        {
+          "id": "q1",
+          "type": "mcq",
+          "question_text": "For an ergodic Markov chain with transition matrix P, which quantity directly upper-bounds mixing time?",
+          "code_snippet": null,
+          "options": [
+            "A) Largest eigenvalue of P",
+            "B) Inverse spectral gap of P",
+            "C) Determinant of P",
+            "D) Trace of P"
+          ],
+          "correct_option": "B",
+          "explanation": "Mixing time is inversely proportional to the spectral gap 1 - |λ2|."
+        },
+        {
+          "id": "q2",
+          "type": "mcq",
+          "question_text": "In DDPM forward process, q(x_t | x_0) has variance equal to which term?",
+          "code_snippet": null,
+          "options": [
+            "A) (1 - alpha_bar_t) I",
+            "B) alpha_bar_t I",
+            "C) beta_t I",
+            "D) (1 - beta_t) I"
+          ],
+          "correct_option": "A",
+          "explanation": "Closed form q(x_t|x_0) = sqrt(alpha_bar_t) x0 + sqrt(1 - alpha_bar_t) ε."
+        },
+        {
+          "id": "q3",
+          "type": "mcq",
+          "question_text": "In the ELBO for DDPM, which term matches the training MSE objective?",
+          "code_snippet": null,
+          "options": [
+            "A) KL(q(x_T|x_0) || p(x_T))",
+            "B) E[||ε - ε_theta(x_t,t)||^2]",
+            "C) log p_theta(x_0)",
+            "D) Negative entropy of q(x_0)"
+          ],
+          "correct_option": "B",
+          "explanation": "The simplified variational bound reduces to noise-prediction MSE."
+        },
+        {
+          "id": "q4",
+          "type": "mcq",
+          "question_text": "Reparameterization z = mu + sigma * eps is crucial because:",
+          "code_snippet": null,
+          "options": [
+            "A) It discretizes latent space",
+            "B) It moves randomness outside learnable nodes for gradients",
+            "C) It increases KL regularization",
+            "D) It removes need for priors"
+          ],
+          "correct_option": "B",
+          "explanation": "Gradients flow through deterministic transform; eps carries randomness."
+        },
+        {
+          "id": "q5",
+          "type": "mcq",
+          "question_text": "KL(N(mu1, diag(s1^2)) || N(mu2, diag(s2^2))) equals:",
+          "code_snippet": null,
+          "options": [
+            "A) 0.5 * sum(s2^2 / s1^2)",
+            "B) 0.5 * sum((s1^2 + (mu2-mu1)^2)/s2^2 - 1 + 2 log s2/s1)",
+            "C) sum|mu1-mu2|",
+            "D) (mu1^T mu2)/(s1 s2)"
+          ],
+          "correct_option": "B",
+          "explanation": "Standard diagonal Gaussian KL closed form."
+        },
+        {
+          "id": "q6",
+          "type": "mcq",
+          "question_text": "For cosine noise schedule, alpha_bar_t near t=0 is:",
+          "code_snippet": null,
+          "options": [
+            "A) Near 0",
+            "B) Near 1",
+            "C) Exactly 0.5",
+            "D) Depends on beta_max only"
+          ],
+          "correct_option": "B",
+          "explanation": "Cosine schedule keeps high SNR at small t, so alpha_bar ~1."
+        },
+        {
+          "id": "q7",
+          "type": "mcq",
+          "question_text": "Score model s_theta(x_t, t) must output tensor of shape:",
+          "code_snippet": null,
+          "options": [
+            "A) (B, 1)",
+            "B) (B, C, H, W) matching x_t",
+            "C) (H, W)",
+            "D) (B, C)"
+          ],
+          "correct_option": "B",
+          "explanation": "Score is gradient wrt x_t; shape matches input."
+        },
+        {
+          "id": "q8",
+          "type": "mcq",
+          "question_text": "In VP SDE continuous form, drift f(x,t) equals:",
+          "code_snippet": null,
+          "options": [
+            "A) 0",
+            "B) -0.5 * beta(t) * x",
+            "C) beta(t) * x",
+            "D) sqrt(beta(t)) * x"
+          ],
+          "correct_option": "B",
+          "explanation": "VP drift shrinks x toward 0 at rate beta(t)/2."
+        },
+        {
+          "id": "q9",
+          "type": "mcq",
+          "question_text": "In VE SDE, diffusion coefficient g(t) is proportional to:",
+          "code_snippet": null,
+          "options": [
+            "A) sqrt(beta(t))",
+            "B) sigma_min",
+            "C) sigma(t)",
+            "D) alpha_bar(t)"
+          ],
+          "correct_option": "C",
+          "explanation": "VE noise grows with sigma(t); variance explodes."
+        },
+        {
+          "id": "q10",
+          "type": "mcq",
+          "question_text": "Detailed balance P satisfies pi_i P_ij = pi_j P_ji. What does it guarantee?",
+          "code_snippet": null,
+          "options": [
+            "A) Reversibility w.r.t pi",
+            "B) Determinism",
+            "C) Periodicity",
+            "D) Non-ergodicity"
+          ],
+          "correct_option": "A",
+          "explanation": "Detailed balance implies reversibility and stationarity of pi."
+        },
+        {
+          "id": "q11",
+          "type": "mcq",
+          "question_text": "alpha_bar_t is defined as:",
+          "code_snippet": null,
+          "options": [
+            "A) sum_{k<=t} beta_k",
+            "B) prod_{k<=t} (1 - beta_k)",
+            "C) exp(-t)",
+            "D) beta_t / t"
+          ],
+          "correct_option": "B",
+          "explanation": "Cumulative product of (1 - beta_k) sets the SNR."
+        },
+        {
+          "id": "q12",
+          "type": "mcq",
+          "question_text": "Forward process q(x_t|x_{t-1}) in DDPM is:",
+          "code_snippet": null,
+          "options": [
+            "A) N(x_{t-1}, beta_t I)",
+            "B) N(sqrt(1 - beta_t) x_{t-1}, beta_t I)",
+            "C) N(0, I)",
+            "D) N(x_0, alpha_bar_t I)"
+          ],
+          "correct_option": "B",
+          "explanation": "Scaling and additive Gaussian noise define Markov kernel."
+        },
+        {
+          "id": "q13",
+          "type": "mcq",
+          "question_text": "ELBO term for t=1..T corresponds to:",
+          "code_snippet": null,
+          "options": [
+            "A) Reconstruction only",
+            "B) Sum of KL(q(x_t|x_{t-1},x_0)||p_theta(x_t|x_{t-1}))",
+            "C) Cross-entropy with labels",
+            "D) Jacobian regularization"
+          ],
+          "correct_option": "B",
+          "explanation": "Diffusion ELBO decomposes into KLs over time steps."
+        },
+        {
+          "id": "q14",
+          "type": "mcq",
+          "question_text": "At t=T in DDPM, the forward marginal q(x_T|x_0) is approximated as:",
+          "code_snippet": null,
+          "options": [
+            "A) Uniform",
+            "B) Standard normal",
+            "C) Dirac delta",
+            "D) Laplace"
+          ],
+          "correct_option": "B",
+          "explanation": "Large noise drives distribution to N(0,I)."
+        },
+        {
+          "id": "q15",
+          "type": "mcq",
+          "question_text": "Which statement about the Markov property is correct?",
+          "code_snippet": null,
+          "options": [
+            "A) x_t depends on all previous x",
+            "B) x_t independent of x_{t-1}",
+            "C) x_t depends only on x_{t-1}",
+            "D) x_t deterministic"
+          ],
+          "correct_option": "C",
+          "explanation": "Markov chains condition only on the previous state."
+        },
+        {
+          "id": "q16",
+          "type": "mcq",
+          "question_text": "For Brownian motion, increment x_{t+dt}-x_t is:",
+          "code_snippet": null,
+          "options": [
+            "A) Deterministic",
+            "B) Gaussian with variance dt",
+            "C) Cauchy",
+            "D) Bernoulli"
+          ],
+          "correct_option": "B",
+          "explanation": "Standard Brownian increments are N(0, dt I)."
+        },
+        {
+          "id": "q17",
+          "type": "mcq",
+          "question_text": "Score matching objective equals minimizing:",
+          "code_snippet": null,
+          "options": [
+            "A) KL divergence",
+            "B) Fisher divergence",
+            "C) Jensen-Shannon divergence",
+            "D) Wasserstein distance"
+          ],
+          "correct_option": "B",
+          "explanation": "Score matching minimizes Fisher divergence between data and model."
+        },
+        {
+          "id": "q18",
+          "type": "mcq",
+          "question_text": "When reparameterizing z = mu + sigma * eps, gradient wrt sigma uses:",
+          "code_snippet": null,
+          "options": [
+            "A) Straight-through estimator",
+            "B) Chain rule through deterministic map",
+            "C) REINFORCE",
+            "D) Gumbel-softmax"
+          ],
+          "correct_option": "B",
+          "explanation": "eps treated as fixed noise; sigma part is differentiable."
+        },
+        {
+          "id": "q19",
+          "type": "mcq",
+          "question_text": "Why is cosine schedule preferred over linear for high-fidelity images?",
+          "code_snippet": null,
+          "options": [
+            "A) Increases step count",
+            "B) Maintains higher SNR in early steps",
+            "C) Reduces need for reverse model",
+            "D) Avoids KL computation"
+          ],
+          "correct_option": "B",
+          "explanation": "Higher SNR early stabilizes reconstruction of x0."
+        },
+        {
+          "id": "q20",
+          "type": "mcq",
+          "question_text": "ELBO tightness primarily depends on:",
+          "code_snippet": null,
+          "options": [
+            "A) Small T",
+            "B) Accurate reverse conditional p_theta(x_{t-1}|x_t)",
+            "C) Deterministic forward process",
+            "D) Large batch size only"
+          ],
+          "correct_option": "B",
+          "explanation": "Reverse model quality controls KL terms and bound tightness."
+        }
+      ]
+    },
+    {
+      "section_id": "B",
+      "section_title": "Logic & Implementation Puzzles",
+      "total_questions": 20,
+      "marking_scheme": { "correct": 2.0, "incorrect": -0.5 },
+      "questions": [
+        {
+          "id": "q21",
+          "type": "parsons_problem",
+          "question_text": "Arrange lines for q(x_t|x_0) sampling with precomputed alpha_bar[t].",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "eps = torch.randn_like(x0)" },
+            { "id": "b2", "text": "mean = torch.sqrt(alpha_bar[t]) * x0" },
+            { "id": "b3", "text": "return mean + torch.sqrt(1 - alpha_bar[t]) * eps" },
+            { "id": "b4", "text": "def q_sample(x0, t):" }
+          ],
+          "correct_order": ["b4", "b1", "b2", "b3"],
+          "explanation": "Define function, sample noise, compute mean, add scaled noise."
+        },
+        {
+          "id": "q22",
+          "type": "parsons_problem",
+          "question_text": "Arrange to compute spectral gap of transition matrix P.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "eigvals = torch.linalg.eigvals(P)" },
+            { "id": "b2", "text": "gap = 1 - eigvals.abs().kthvalue(len(eigvals)-1).values" },
+            { "id": "b3", "text": "def spectral_gap(P):" },
+            { "id": "b4", "text": "return gap.real" }
+          ],
+          "correct_order": ["b3", "b1", "b2", "b4"],
+          "explanation": "Second largest |λ| determines gap."
+        },
+        {
+          "id": "q23",
+          "type": "parsons_problem",
+          "question_text": "Arrange to compute KL between two diagonal Gaussians.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "var1, var2 = s1**2, s2**2" },
+            { "id": "b2", "text": "kl = 0.5 * torch.sum((var1 + (m2 - m1)**2)/var2 - 1 + torch.log(var2/var1))" },
+            { "id": "b3", "text": "def kl_diag(m1, s1, m2, s2):" },
+            { "id": "b4", "text": "return kl" }
+          ],
+          "correct_order": ["b3", "b1", "b2", "b4"],
+          "explanation": "Compute variances then analytic KL."
+        },
+        {
+          "id": "q24",
+          "type": "parsons_problem",
+          "question_text": "Arrange to compute alpha_bar from beta schedule.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "alpha = 1.0 - betas" },
+            { "id": "b2", "text": "alpha_bar = torch.cumprod(alpha, dim=0)" },
+            { "id": "b3", "text": "def compute_alpha_bar(betas):" },
+            { "id": "b4", "text": "return alpha_bar" }
+          ],
+          "correct_order": ["b3", "b1", "b2", "b4"],
+          "explanation": "Alpha_bar is product of (1 - beta_t)."
+        },
+        {
+          "id": "q25",
+          "type": "parsons_problem",
+          "question_text": "Arrange to estimate score with finite differences.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "eps = 1e-3" },
+            { "id": "b2", "text": "fwd = logp(x + eps)" },
+            { "id": "b3", "text": "bwd = logp(x - eps)" },
+            { "id": "b4", "text": "return (fwd - bwd) / (2 * eps)" },
+            { "id": "b5", "text": "def score_fd(logp, x):" }
+          ],
+          "correct_order": ["b5", "b1", "b2", "b3", "b4"],
+          "explanation": "Central difference approximates gradient."
+        },
+        {
+          "id": "q26",
+          "type": "parsons_problem",
+          "question_text": "Arrange to sample Brownian increment.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "return torch.sqrt(dt) * torch.randn_like(x)" },
+            { "id": "b2", "text": "def brownian_step(x, dt):" }
+          ],
+          "correct_order": ["b2", "b1"],
+          "explanation": "Variance dt Gaussian noise."
+        },
+        {
+          "id": "q27",
+          "type": "parsons_problem",
+          "question_text": "Arrange reverse-step mean for VP: mu = (1/sqrt(1 - beta_t)) (x_t - beta_t/sqrt(1 - alpha_bar_t) * eps_theta).",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "coef1 = 1 / torch.sqrt(1 - beta_t)" },
+            { "id": "b2", "text": "coef2 = beta_t / torch.sqrt(1 - alpha_bar_t)" },
+            { "id": "b3", "text": "mu = coef1 * (x_t - coef2 * eps_theta)" },
+            { "id": "b4", "text": "def reverse_mean(x_t, beta_t, alpha_bar_t, eps_theta):" },
+            { "id": "b5", "text": "return mu" }
+          ],
+          "correct_order": ["b4", "b1", "b2", "b3", "b5"],
+          "explanation": "Direct DDPM reverse mean formula."
+        },
+        {
+          "id": "q28",
+          "type": "parsons_problem",
+          "question_text": "Arrange to compute ELBO term L_t = KL(q(x_{t-1}|x_t,x_0) || p_theta(x_{t-1}|x_t)).",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "q_mean, q_var = q_posterior(x0, x_t, t)" },
+            { "id": "b2", "text": "p_mean, p_var = p_theta(x_t, t)" },
+            { "id": "b3", "text": "return kl_gaussian(q_mean, q_var, p_mean, p_var)" },
+            { "id": "b4", "text": "def L_t(x0, x_t, t):" }
+          ],
+          "correct_order": ["b4", "b1", "b2", "b3"],
+          "explanation": "Posterior vs model reverse conditional KL."
+        },
+        {
+          "id": "q29",
+          "type": "parsons_problem",
+          "question_text": "Arrange to compute log-likelihood lower bound.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "prior = kl_to_standard_normal(x_T)" },
+            { "id": "b2", "text": "recon = recon_term(x0, x_1)" },
+            { "id": "b3", "text": "kl_sum = sum(L_t_list)" },
+            { "id": "b4", "text": "return -(recon + kl_sum + prior)" },
+            { "id": "b5", "text": "def elbo(L_t_list, x0, x_1, x_T):" }
+          ],
+          "correct_order": ["b5", "b2", "b3", "b1", "b4"],
+          "explanation": "ELBO negative sum of reconstruction, KL chain, prior."
+        },
+        {
+          "id": "q30",
+          "type": "parsons_problem",
+          "question_text": "Arrange to compute alpha from beta schedule and clamp for stability.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "alpha = 1 - betas" },
+            { "id": "b2", "text": "alpha = torch.clamp(alpha, 1e-5, 1.0)" },
+            { "id": "b3", "text": "def stable_alpha(betas):" },
+            { "id": "b4", "text": "return alpha" }
+          ],
+          "correct_order": ["b3", "b1", "b2", "b4"],
+          "explanation": "Clamp avoids log underflow."
+        },
+        {
+          "id": "q31",
+          "type": "fill_in_blank",
+          "question_text": "Complete VP drift: dx = ______ dt + sqrt(beta(t)) dW.",
+          "correct_answer": "-0.5 * beta(t) * x",
+          "explanation": "VP drift shrinks state toward zero."
+        },
+        {
+          "id": "q32",
+          "type": "fill_in_blank",
+          "question_text": "ELBO decomposition: log p(x_0) >= -sum_t KL_t - ______.",
+          "correct_answer": "E_q[-log p_theta(x_0|x_1)]",
+          "explanation": "Reconstruction term closes the bound."
+        },
+        {
+          "id": "q33",
+          "type": "fill_in_blank",
+          "question_text": "Forward closed form: q(x_t|x_0) = sqrt(alpha_bar_t) x0 + ______.",
+          "correct_answer": "sqrt(1 - alpha_bar_t) * eps",
+          "explanation": "Noise scaled by remaining variance."
+        },
+        {
+          "id": "q34",
+          "type": "fill_in_blank",
+          "question_text": "Continuous-time SDE score training loss scales noise by weighting proportional to ______.",
+          "correct_answer": "sigma(t)^2",
+          "explanation": "VE/VP weighting uses SNR or sigma^2."
+        },
+        {
+          "id": "q35",
+          "type": "fill_in_blank",
+          "question_text": "Reparameterization gradient uses chain rule: d/dtheta E_eps f(mu + sigma * eps) = E_eps[ ______ ].",
+          "correct_answer": "grad_x f(x) * d x / d theta",
+          "explanation": "Differentiate deterministic map."
+        },
+        {
+          "id": "q36",
+          "type": "fill_in_blank",
+          "question_text": "KL to standard normal for diagonal posterior: 0.5 * sum(mu^2 + sigma^2 - log sigma^2 - ______).",
+          "correct_answer": "1",
+          "explanation": "Standard VAE KL term."
+        },
+        {
+          "id": "q37",
+          "type": "fill_in_blank",
+          "question_text": "Discrete reverse variance in DDPM: beta_tilde_t = beta_t * (1 - alpha_bar_{t-1}) / ______.",
+          "correct_answer": "1 - alpha_bar_t",
+          "explanation": "Posterior variance formula."
+        },
+        {
+          "id": "q38",
+          "type": "fill_in_blank",
+          "question_text": "Fisher divergence between p and q uses gradient of log densities: E_p[ || \\nabla log p - ______ ||^2 ].",
+          "correct_answer": "∇ log q",
+          "explanation": "Score matching objective."
+        },
+        {
+          "id": "q39",
+          "type": "fill_in_blank",
+          "question_text": "For linear beta schedule, alpha_bar_t decays approximately ______ with t.",
+          "correct_answer": "exponentially",
+          "explanation": "Product of (1 - beta) behaves like exp(-sum beta)."
+        },
+        {
+          "id": "q40",
+          "type": "fill_in_blank",
+          "question_text": "Gibbs sampler mixes fast when conditional variances are ______.",
+          "correct_answer": "small and well-conditioned",
+          "explanation": "Lower conditional variance reduces random walk behavior."
+        }
+      ]
+    },
+    {
+      "section_id": "C",
+      "section_title": "Deep Theory & Coding",
+      "total_questions": 10,
+      "marking_scheme": { "correct": 4.0, "incorrect": -1.0 },
+      "questions": [
+        {
+          "id": "q41",
+          "type": "theory_open_ended",
+          "question_text": "Derive the VP SDE from the discrete DDPM forward process and discuss the limit assumptions.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Show beta_t -> beta(t) dt",
+              "State drift -0.5 beta(t) x, diffusion sqrt(beta(t))",
+              "Link alpha_bar = exp(-∫ beta/2)",
+              "Assume small beta_t and independence of noise increments"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q42",
+          "type": "theory_open_ended",
+          "question_text": "Explain why the reparameterization trick reduces gradient variance compared to score-function estimators.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Moves randomness out of graph",
+              "Enables pathwise derivative",
+              "No likelihood-ratio term",
+              "Lower variance vs REINFORCE for continuous latents"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q43",
+          "type": "theory_open_ended",
+          "question_text": "Compare VP and VE SDEs and map them to DDPM and NCSN training losses.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "VP bounded variance, VE unbounded",
+              "VP aligns with DDPM noise prediction",
+              "VE aligns with score matching with sigma levels",
+              "Sampling differences in reverse drift/diffusion"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q44",
+          "type": "theory_open_ended",
+          "question_text": "Show how ELBO in diffusion decomposes into KL chain plus reconstruction; specify each term.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Write log p(x0) >= E_q[...]",
+              "KL(q(x_T|x0)||p(x_T)) term",
+              "Sum KL(q(x_{t-1}|x_t,x0)||p_theta(x_{t-1}|x_t))",
+              "Reconstruction term log p_theta(x0|x1)"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q45",
+          "type": "theory_open_ended",
+          "question_text": "Discuss the role of spectral gap in convergence of Langevin dynamics used for sampling.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Spectral gap controls mixing time",
+              "Large gap -> fast convergence",
+              "Relation to log-Sobolev/Poincaré",
+              "Implications for step size in practice"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q46",
+          "type": "theory_open_ended",
+          "question_text": "Explain how noise schedules affect SNR across time and why SNR balancing matters for training stability.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "SNR = alpha_bar / (1 - alpha_bar)",
+              "High SNR early preserves data signal",
+              "Low SNR late ensures noise-dominant regime",
+              "Training loss weighting depends on SNR"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q47",
+          "type": "theory_open_ended",
+          "question_text": "Derive the analytic posterior q(x_{t-1}|x_t,x_0) for DDPM.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Use Bayes with Gaussians",
+              "Compute mean with alpha coefficients",
+              "Posterior variance beta_tilde",
+              "Show dependence on x0 and x_t only"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q48",
+          "type": "theory_open_ended",
+          "question_text": "Why is predicting noise ε preferable to predicting x_0 directly in VP models?",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Noise prediction avoids signal scale issues",
+              "Leads to well-conditioned targets",
+              "Equivalent to score estimation",
+              "Eases weighting across timesteps"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q49",
+          "type": "theory_open_ended",
+          "question_text": "Explain the connection between denoising score matching and diffusion likelihood training.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "DSM trains score on noisy data",
+              "Diffusion objective approximates DSM with noise levels",
+              "Score guides reverse SDE/ODE",
+              "Likelihood linked via probability flow ODE"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q50",
+          "type": "theory_open_ended",
+          "question_text": "Outline how to estimate log-likelihood via importance sampling from reverse trajectories.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Use reverse path probability ratio",
+              "Estimate using ELBO or AIS",
+              "Control variance via discretization",
+              "Mention coupling with learned reverse mean/var"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        }
+      ]
+    }
+  ]
+}

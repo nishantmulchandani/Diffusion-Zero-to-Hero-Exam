@@ -1,0 +1,658 @@
+{
+  "module_name": "06_Training_Dynamics",
+  "difficulty_level": "Hard",
+  "rendering_note": "Math tokens appear as plain text (e.g., alpha_bar_t, sqrt(beta(t)), mu, sigma^2). Render them with LaTeX/KaTeX/MathJax in the frontend.",
+  "sections": [
+    {
+      "section_id": "A",
+      "section_title": "Conceptual Recall (MCQs)",
+      "total_questions": 20,
+      "marking_scheme": { "correct": 2.0, "incorrect": -0.5 },
+      "questions": [
+        {
+          "id": "q1",
+          "type": "mcq",
+          "question_text": "Noise-prediction loss weight proportional to SNR^{-1} emphasizes:",
+          "code_snippet": null,
+          "options": [
+            "A) High-noise steps more",
+            "B) Low-noise steps more",
+            "C) All steps equally",
+            "D) Only t=0"
+          ],
+          "correct_option": "A",
+          "explanation": "Inverse SNR upweights high-noise timesteps."
+        },
+        {
+          "id": "q2",
+          "type": "mcq",
+          "question_text": "AdamW differs from Adam by:",
+          "code_snippet": null,
+          "options": [
+            "A) Using SGD momentum",
+            "B) Decoupling weight decay from gradient update",
+            "C) Removing beta2",
+            "D) Using RMSProp"
+          ],
+          "correct_option": "B",
+          "explanation": "AdamW applies weight decay separately from adaptive gradients."
+        },
+        {
+          "id": "q3",
+          "type": "mcq",
+          "question_text": "LoRA inserts trainable low-rank matrices into:",
+          "code_snippet": null,
+          "options": [
+            "A) LayerNorm",
+            "B) Linear/conv weight updates",
+            "C) Positional embeddings",
+            "D) Optimizer states"
+          ],
+          "correct_option": "B",
+          "explanation": "Low-rank adapters modify weight updates while freezing base weights."
+        },
+        {
+          "id": "q4",
+          "type": "mcq",
+          "question_text": "v-prediction training predicts:",
+          "code_snippet": null,
+          "options": [
+            "A) Beta schedule",
+            "B) x0 directly",
+            "C) v = alpha_t * eps - sqrt(1 - alpha_t) * x0",
+            "D) KL divergence"
+          ],
+          "correct_option": "C",
+          "explanation": "v-pred mixes signal and noise for better conditioning."
+        },
+        {
+          "id": "q5",
+          "type": "mcq",
+          "question_text": "Learning rate warmup is critical because early in training:",
+          "code_snippet": null,
+          "options": [
+            "A) Gradients are tiny",
+            "B) Optimizer states are uncalibrated and large LR destabilizes",
+            "C) AdamW requires zero LR",
+            "D) Betas are random"
+          ],
+          "correct_option": "B",
+          "explanation": "Warmup stabilizes updates before moments stabilize."
+        },
+        {
+          "id": "q6",
+          "type": "mcq",
+          "question_text": "EMA (exponential moving average) of weights helps because:",
+          "code_snippet": null,
+          "options": [
+            "A) Decreases batch size",
+            "B) Smooths noisy updates, improving sample quality",
+            "C) Changes architecture",
+            "D) Removes need for scheduler"
+          ],
+          "correct_option": "B",
+          "explanation": "EMA averages weights over steps to stabilize inference."
+        },
+        {
+          "id": "q7",
+          "type": "mcq",
+          "question_text": "LoRA rank r controls:",
+          "code_snippet": null,
+          "options": [
+            "A) Number of training steps",
+            "B) Adapter capacity and parameter count",
+            "C) Batch size",
+            "D) Attention heads"
+          ],
+          "correct_option": "B",
+          "explanation": "Higher rank increases expressivity and parameters."
+        },
+        {
+          "id": "q8",
+          "type": "mcq",
+          "question_text": "Gradient clipping in diffusion training primarily prevents:",
+          "code_snippet": null,
+          "options": [
+            "A) Underfitting",
+            "B) Exploding updates from rare large gradients",
+            "C) Over-regularization",
+            "D) Dropout"
+          ],
+          "correct_option": "B",
+          "explanation": "Clipping stabilizes training under noisy gradients."
+        },
+        {
+          "id": "q9",
+          "type": "mcq",
+          "question_text": "Learning rate cosine decay anneals LR to:",
+          "code_snippet": null,
+          "options": [
+            "A) Constant value",
+            "B) Near zero at end of schedule",
+            "C) Infinity",
+            "D) Negative values"
+          ],
+          "correct_option": "B",
+          "explanation": "Cosine schedule asymptotically approaches zero."
+        },
+        {
+          "id": "q10",
+          "type": "mcq",
+          "question_text": "SNR weighting suggested by Salimans/Ho reweights loss by:",
+          "code_snippet": null,
+          "options": [
+            "A) sqrt(SNR)",
+            "B) 1 / SNR",
+            "C) log(SNR)",
+            "D) SNR^2"
+          ],
+          "correct_option": "B",
+          "explanation": "Inverse SNR prevents overweighting low-noise steps."
+        },
+        {
+          "id": "q11",
+          "type": "mcq",
+          "question_text": "Fine-tuning with frozen encoder/decoder but trainable UNet focuses capacity on:",
+          "code_snippet": null,
+          "options": [
+            "A) Autoencoder reconstruction",
+            "B) Denoiser adaptation",
+            "C) Tokenizer",
+            "D) Optimizer"
+          ],
+          "correct_option": "B",
+          "explanation": "Keeps VAE fixed, adapts diffusion UNet."
+        },
+        {
+          "id": "q12",
+          "type": "mcq",
+          "question_text": "EMA decay closer to 1.0 yields:",
+          "code_snippet": null,
+          "options": [
+            "A) Faster adaptation, noisier avg",
+            "B) Slower adaptation, smoother avg",
+            "C) No effect",
+            "D) Negative weights"
+          ],
+          "correct_option": "B",
+          "explanation": "High decay averages over longer window."
+        },
+        {
+          "id": "q13",
+          "type": "mcq",
+          "question_text": "LoRA update to weight W uses delta = A B with shapes:",
+          "code_snippet": null,
+          "options": [
+            "A) A: (d_out, r), B: (r, d_in)",
+            "B) A: (r, d_out), B: (d_in, r)",
+            "C) A: (d_out, d_in), B: (r, r)",
+            "D) A: (r, r), B: (d_out, d_in)"
+          ],
+          "correct_option": "A",
+          "explanation": "Low-rank factorization matches original weight shape."
+        },
+        {
+          "id": "q14",
+          "type": "mcq",
+          "question_text": "v-prediction improves stability because it:",
+          "code_snippet": null,
+          "options": [
+            "A) Removes need for beta schedule",
+            "B) Keeps target variance roughly constant across timesteps",
+            "C) Doubles parameters",
+            "D) Ignores noise"
+          ],
+          "correct_option": "B",
+          "explanation": "v mixes signal/noise to balance scales."
+        },
+        {
+          "id": "q15",
+          "type": "mcq",
+          "question_text": "LoRA training memory is lower because:",
+          "code_snippet": null,
+          "options": [
+            "A) Gradients stored only for small adapter matrices",
+            "B) Uses float16 only",
+            "C) Removes activations",
+            "D) Freezes optimizer"
+          ],
+          "correct_option": "A",
+          "explanation": "Base weights frozen; only adapters require grads."
+        },
+        {
+          "id": "q16",
+          "type": "mcq",
+          "question_text": "Weight decay should typically not apply to:",
+          "code_snippet": null,
+          "options": [
+            "A) Linear weights",
+            "B) Bias and LayerNorm scale",
+            "C) Conv kernels",
+            "D) Embeddings"
+          ],
+          "correct_option": "B",
+          "explanation": "Decay on norm/bias harms scale parameters."
+        },
+        {
+          "id": "q17",
+          "type": "mcq",
+          "question_text": "Gradient accumulation simulates larger batches by:",
+          "code_snippet": null,
+          "options": [
+            "A) Scaling LR",
+            "B) Summing gradients over microbatches before step",
+            "C) Duplicating data",
+            "D) Increasing dropout"
+          ],
+          "correct_option": "B",
+          "explanation": "Accumulate gradients then apply optimizer once."
+        },
+        {
+          "id": "q18",
+          "type": "mcq",
+          "question_text": "Cosine LR schedule with restarts can help by:",
+          "code_snippet": null,
+          "options": [
+            "A) Eliminating EMA",
+            "B) Escaping shallow minima with periodic LR boosts",
+            "C) Removing warmup",
+            "D) Forcing weight decay to zero"
+          ],
+          "correct_option": "B",
+          "explanation": "Restarts raise LR to explore new basins."
+        },
+        {
+          "id": "q19",
+          "type": "mcq",
+          "question_text": "Fine-tuning on narrow domain with full UNet often risks:",
+          "code_snippet": null,
+          "options": [
+            "A) Underfitting",
+            "B) Catastrophic forgetting of general capability",
+            "C) Lower FLOPs",
+            "D) Smaller checkpoints"
+          ],
+          "correct_option": "B",
+          "explanation": "Full finetune overwrites general features."
+        },
+        {
+          "id": "q20",
+          "type": "mcq",
+          "question_text": "EMA parameters used for inference should be updated:",
+          "code_snippet": null,
+          "options": [
+            "A) Only at epoch end",
+            "B) Every optimizer step",
+            "C) Never",
+            "D) Randomly"
+          ],
+          "correct_option": "B",
+          "explanation": "EMA updated each step to track moving average."
+        }
+      ]
+    },
+    {
+      "section_id": "B",
+      "section_title": "Logic & Implementation Puzzles",
+      "total_questions": 20,
+      "marking_scheme": { "correct": 2.0, "incorrect": -0.5 },
+      "questions": [
+        {
+          "id": "q21",
+          "type": "parsons_problem",
+          "question_text": "Arrange to apply inverse-SNR weighting to noise MSE.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "loss = ((pred - eps)**2).mean(dim=list(range(1,pred.ndim)))" },
+            { "id": "b2", "text": "w = 1 / snr" },
+            { "id": "b3", "text": "return (w * loss).mean()" },
+            { "id": "b4", "text": "def weighted_loss(pred, eps, snr):" }
+          ],
+          "correct_order": ["b4", "b1", "b2", "b3"],
+          "explanation": "Compute per-sample loss, scale by 1/SNR, average."
+        },
+        {
+          "id": "q22",
+          "type": "parsons_problem",
+          "question_text": "Arrange AdamW optimizer creation with no weight decay on bias/LN.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "decay = []; no_decay = []" },
+            { "id": "b2", "text": "for n,p in model.named_parameters():\n    (no_decay if any(nd in n for nd in [\"bias\",\"ln\",\"norm\",\"bn\"]) else decay).append(p)" },
+            { "id": "b3", "text": "def make_opt(model, lr, wd):" },
+            { "id": "b4", "text": "return torch.optim.AdamW([\n    {\"params\": decay, \"weight_decay\": wd},\n    {\"params\": no_decay, \"weight_decay\": 0.0}], lr=lr)" }
+          ],
+          "correct_order": ["b3", "b1", "b2", "b4"],
+          "explanation": "Group parameters to decouple weight decay."
+        },
+        {
+          "id": "q23",
+          "type": "parsons_problem",
+          "question_text": "Arrange to update EMA parameters after optimizer step.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "for ema_p, p in zip(ema_model.parameters(), model.parameters()):" },
+            { "id": "b2", "text": "ema_p.data.mul_(decay).add_(p.data, alpha=1-decay)" },
+            { "id": "b3", "text": "def ema_update(model, ema_model, decay):" },
+            { "id": "b4", "text": "return ema_model" }
+          ],
+          "correct_order": ["b3", "b1", "b2", "b4"],
+          "explanation": "EMA is exponential average of live weights."
+        },
+        {
+          "id": "q24",
+          "type": "parsons_problem",
+          "question_text": "Arrange LoRA injection into linear layer forward.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "base = F.linear(x, weight, bias)" },
+            { "id": "b2", "text": "delta = lora_B(lora_A(x))" },
+            { "id": "b3", "text": "return base + alpha / r * delta" },
+            { "id": "b4", "text": "def lora_linear(x, weight, bias, lora_A, lora_B, alpha, r):" }
+          ],
+          "correct_order": ["b4", "b1", "b2", "b3"],
+          "explanation": "Add scaled low-rank update to frozen base projection."
+        },
+        {
+          "id": "q25",
+          "type": "parsons_problem",
+          "question_text": "Arrange v-prediction target computation.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "v = alpha_t * eps - torch.sqrt(1 - alpha_t) * x0" },
+            { "id": "b2", "text": "def v_target(x0, eps, alpha_t):" },
+            { "id": "b3", "text": "return v" }
+          ],
+          "correct_order": ["b2", "b1", "b3"],
+          "explanation": "Mix signal/noise using alpha_t."
+        },
+        {
+          "id": "q26",
+          "type": "parsons_problem",
+          "question_text": "Arrange gradient clipping by norm.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm)" },
+            { "id": "b2", "text": "def clip(model, max_norm):" },
+            { "id": "b3", "text": "return None" }
+          ],
+          "correct_order": ["b2", "b1", "b3"],
+          "explanation": "Clip gradients before optimizer.step()."
+        },
+        {
+          "id": "q27",
+          "type": "parsons_problem",
+          "question_text": "Arrange learning rate warmup scheduler.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "def lr_lambda(step): return min(1.0, step / warmup_steps)" },
+            { "id": "b2", "text": "return torch.optim.lr_scheduler.LambdaLR(opt, lr_lambda)" },
+            { "id": "b3", "text": "def warmup(opt, warmup_steps):" }
+          ],
+          "correct_order": ["b3", "b1", "b2"],
+          "explanation": "Scale LR linearly until warmup_steps."
+        },
+        {
+          "id": "q28",
+          "type": "parsons_problem",
+          "question_text": "Arrange gradient accumulation over microbatches.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "loss.backward()" },
+            { "id": "b2", "text": "if (i+1) % accum == 0:\n    opt.step(); opt.zero_grad()" },
+            { "id": "b3", "text": "def train_step(batch_iter, accum):" },
+            { "id": "b4", "text": "for i, (x, y) in enumerate(batch_iter):" },
+            { "id": "b5", "text": "    loss = model(x, y) / accum" }
+          ],
+          "correct_order": ["b3", "b4", "b5", "b1", "b2"],
+          "explanation": "Scale loss, accumulate grads, step every accum microbatches."
+        },
+        {
+          "id": "q29",
+          "type": "parsons_problem",
+          "question_text": "Arrange to exclude biases from weight decay parameter group.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "params = [p for n,p in model.named_parameters() if \"bias\" not in n]" },
+            { "id": "b2", "text": "biases = [p for n,p in model.named_parameters() if \"bias\" in n]" },
+            { "id": "b3", "text": "def group_params(model):" },
+            { "id": "b4", "text": "return [{\"params\": params, \"weight_decay\": wd}, {\"params\": biases, \"weight_decay\": 0.0}]" }
+          ],
+          "correct_order": ["b3", "b1", "b2", "b4"],
+          "explanation": "Separate biases to avoid decay."
+        },
+        {
+          "id": "q30",
+          "type": "parsons_problem",
+          "question_text": "Arrange EMA decay scheduling based on step count.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "decay = 1 - min(ema_base, (step+1)/(step+ema_half))" },
+            { "id": "b2", "text": "def ema_decay(step, ema_base, ema_half):" },
+            { "id": "b3", "text": "return decay" }
+          ],
+          "correct_order": ["b2", "b1", "b3"],
+          "explanation": "Ramp decay to near 1 as step increases."
+        },
+        {
+          "id": "q31",
+          "type": "fill_in_blank",
+          "question_text": "LoRA update added to frozen weight W is scaled by ______ / r.",
+          "correct_answer": "alpha",
+          "explanation": "Alpha scales the low-rank update."
+        },
+        {
+          "id": "q32",
+          "type": "fill_in_blank",
+          "question_text": "Inverse-SNR weighting multiplies loss by 1 / ______.",
+          "correct_answer": "SNR",
+          "explanation": "Reduces influence of low-noise steps."
+        },
+        {
+          "id": "q33",
+          "type": "fill_in_blank",
+          "question_text": "AdamW weight decay is applied as a direct ______ on parameters.",
+          "correct_answer": "shrinkage",
+          "explanation": "Decoupled decay subtracts proportional term from weights."
+        },
+        {
+          "id": "q34",
+          "type": "fill_in_blank",
+          "question_text": "EMA parameter update: ema = decay * ema + (1 - decay) * ______.",
+          "correct_answer": "param",
+          "explanation": "Blend current weight into EMA."
+        },
+        {
+          "id": "q35",
+          "type": "fill_in_blank",
+          "question_text": "v-prediction target v mixes eps and x0 with coefficient ______ on eps.",
+          "correct_answer": "alpha_t",
+          "explanation": "Formula uses alpha_t times eps."
+        },
+        {
+          "id": "q36",
+          "type": "fill_in_blank",
+          "question_text": "Gradient clipping by norm caps ||g|| at ______.",
+          "correct_answer": "max_norm",
+          "explanation": "Clipped to threshold."
+        },
+        {
+          "id": "q37",
+          "type": "fill_in_blank",
+          "question_text": "Warmup scales LR linearly from 0 to base LR over ______ steps.",
+          "correct_answer": "warmup",
+          "explanation": "Warmup length defines ramp duration."
+        },
+        {
+          "id": "q38",
+          "type": "fill_in_blank",
+          "question_text": "LoRA rank r << d ensures parameter ______.",
+          "correct_answer": "efficiency",
+          "explanation": "Low rank reduces trainable parameters."
+        },
+        {
+          "id": "q39",
+          "type": "fill_in_blank",
+          "question_text": "Cosine decay final learning rate approaches ______.",
+          "correct_answer": "zero",
+          "explanation": "Cosine schedule ends near zero."
+        },
+        {
+          "id": "q40",
+          "type": "fill_in_blank",
+          "question_text": "Catastrophic forgetting during finetune can be mitigated by mixing ______ data.",
+          "correct_answer": "original/base",
+          "explanation": "Replay base data preserves generalization."
+        }
+      ]
+    },
+    {
+      "section_id": "C",
+      "section_title": "Deep Theory & Coding",
+      "total_questions": 10,
+      "marking_scheme": { "correct": 4.0, "incorrect": -1.0 },
+      "questions": [
+        {
+          "id": "q41",
+          "type": "theory_open_ended",
+          "question_text": "Derive v-prediction target from x_t = sqrt(alpha_t) x0 + sqrt(1 - alpha_t) eps and explain why its scale is more uniform across timesteps.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Express v = alpha_t eps - sqrt(1 - alpha_t) x0",
+              "Show invertibility with x0, eps",
+              "Argue variance of v is more uniform than eps or x0 targets",
+              "Connect to stable optimization across timesteps"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q42",
+          "type": "theory_open_ended",
+          "question_text": "Analyze benefits and pitfalls of inverse-SNR loss weighting; when could it hurt sample quality?",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Benefits: balance gradient contributions, avoid overfitting low-noise steps",
+              "Pitfalls: overweight noisy steps causing blur/noise",
+              "Depends on scheduler and target (eps vs v)",
+              "Empirical tuning of weight power needed"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q43",
+          "type": "theory_open_ended",
+          "question_text": "Explain why AdamW's decoupled weight decay is preferable for diffusion UNets compared to L2 regularization inside Adam.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Decoupling avoids interaction with adaptive moments",
+              "L2 inside gradient scales with learning rate adaptation improperly",
+              "AdamW yields better generalization and stable training",
+              "Empirical evidence in vision/transformers"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q44",
+          "type": "theory_open_ended",
+          "question_text": "Compare full fine-tuning vs LoRA adapters for domain adaptation of diffusion models.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Full FT updates all weights -> high capacity, higher risk of forgetting",
+              "LoRA updates small rank adapters -> parameter/compute efficient",
+              "LoRA preserves base model; easy merge/unmerge",
+              "Trade-off: LoRA limited capacity; may need higher rank for large shifts"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q45",
+          "type": "theory_open_ended",
+          "question_text": "Propose a mixed precision training plan for diffusion ensuring stability; address loss scaling and optimizer states.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Use autocast for forward",
+              "Grad scaling to prevent underflow",
+              "Keep optimizer states in FP32",
+              "Watch for overflow, adjust scale dynamically"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q46",
+          "type": "theory_open_ended",
+          "question_text": "Explain how EMA decay should vary with training length and why very long runs might need schedule adjustments.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Early training benefits from lower decay to track changes",
+              "Later training prefers high decay for stability",
+              "Long runs may drift; schedule decay up over time",
+              "Relate to bias correction of EMA"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q47",
+          "type": "theory_open_ended",
+          "question_text": "Describe how gradient accumulation interacts with AdamW's bias correction terms.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Effective step count increments only on optimizer step",
+              "Bias correction uses step index of updates, not microbatches",
+              "Accumulation changes gradient noise scale",
+              "Adjust learning rate if changing accum steps to preserve effective batch"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q48",
+          "type": "theory_open_ended",
+          "question_text": "Discuss strategies to avoid catastrophic forgetting when fine-tuning diffusion models on narrow domains.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Replay base data or mixed batches",
+              "Regularize with KL/feature distillation from base model",
+              "Freeze parts of model or use adapters",
+              "Lower learning rate/shorter schedules"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q49",
+          "type": "theory_open_ended",
+          "question_text": "Give an argument for using separate learning rates for text encoder and UNet in text-to-image diffusion fine-tuning.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Text encoder often pretrained/frozen; if unfrozen needs smaller LR",
+              "UNet benefits from larger LR for adaptation",
+              "Prevents destroying language alignment",
+              "Empirical practice uses lr multipliers"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q50",
+          "type": "theory_open_ended",
+          "question_text": "Explain why bias/LayerNorm weights should be excluded from weight decay and how to implement this in parameter grouping.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Decay on scale/bias harms normalization and shift parameters",
+              "Group parameters into decay vs no-decay sets",
+              "Identify by name or dimensionality",
+              "Use separate optimizer parameter groups with wd=0 for exclusions"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        }
+      ]
+    }
+  ]
+}

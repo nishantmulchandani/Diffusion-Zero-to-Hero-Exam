@@ -1,0 +1,660 @@
+{
+  "module_name": "14_Debugging_and_Robustness",
+  "difficulty_level": "Hard",
+  "rendering_note": "Math tokens appear as plain text (e.g., alpha_bar_t, sqrt(beta(t)), mu, sigma^2). Render them with LaTeX/KaTeX/MathJax in the frontend.",
+  "sections": [
+    {
+      "section_id": "A",
+      "section_title": "Conceptual Recall (MCQs)",
+      "total_questions": 20,
+      "marking_scheme": { "correct": 2.0, "incorrect": -0.5 },
+      "questions": [
+        {
+          "id": "q1",
+          "type": "mcq",
+          "question_text": "NaNs during training often originate from:",
+          "code_snippet": null,
+          "options": [
+            "A) Correct SNR weighting",
+            "B) Exploding gradients, bad learning rate/AMP overflow, or invalid sqrt of negative variance",
+            "C) Low batch size only",
+            "D) Fixed seeds"
+          ],
+          "correct_option": "B",
+          "explanation": "NaNs usually come from instability or invalid math."
+        },
+        {
+          "id": "q2",
+          "type": "mcq",
+          "question_text": "Gradient overflow in mixed precision can be mitigated by:",
+          "code_snippet": null,
+          "options": [
+            "A) Increasing LR",
+            "B) Gradient clipping and lower loss scaling",
+            "C) Removing EMA",
+            "D) Random betas"
+          ],
+          "correct_option": "B",
+          "explanation": "Clip and adjust scaler to avoid overflow."
+        },
+        {
+          "id": "q3",
+          "type": "mcq",
+          "question_text": "Mode collapse in diffusion manifests as:",
+          "code_snippet": null,
+          "options": [
+            "A) Diverse outputs",
+            "B) Repetitive or identical outputs across seeds",
+            "C) Lower loss always",
+            "D) Better FID"
+          ],
+          "correct_option": "B",
+          "explanation": "Collapse shows low diversity."
+        },
+        {
+          "id": "q4",
+          "type": "mcq",
+          "question_text": "Over-strong CFG during few-step sampling may cause:",
+          "code_snippet": null,
+          "options": [
+            "A) More diversity",
+            "B) Overshoot, blown-out highlights, or artifacts",
+            "C) Faster convergence",
+            "D) No effect"
+          ],
+          "correct_option": "B",
+          "explanation": "High w can destabilize coarse steps."
+        },
+        {
+          "id": "q5",
+          "type": "mcq",
+          "question_text": "Mismatch between VAE scale in training vs inference leads to:",
+          "code_snippet": null,
+          "options": [
+            "A) Better images",
+            "B) Washed-out or overly saturated outputs due to wrong latent magnitude",
+            "C) Faster sampling",
+            "D) Reduced VRAM"
+          ],
+          "correct_option": "B",
+          "explanation": "Scale mismatch shifts distribution."
+        },
+        {
+          "id": "q6",
+          "type": "mcq",
+          "question_text": "Exploding loss early in training often fixed by:",
+          "code_snippet": null,
+          "options": [
+            "A) Higher LR",
+            "B) Lower LR, add warmup, check beta schedule/clipping",
+            "C) Removing dropout",
+            "D) Ignoring it"
+          ],
+          "correct_option": "B",
+          "explanation": "Stabilize learning rate and clipping."
+        },
+        {
+          "id": "q7",
+          "type": "mcq",
+          "question_text": "Checkerboard artifacts in outputs usually relate to:",
+          "code_snippet": null,
+          "options": [
+            "A) Text encoder bug",
+            "B) Decoder upsampling (e.g., transposed conv without smoothing)",
+            "C) Token length",
+            "D) Beta too small"
+          ],
+          "correct_option": "B",
+          "explanation": "Upsampling kernels can cause checkerboard."
+        },
+        {
+          "id": "q8",
+          "type": "mcq",
+          "question_text": "Unstable attention (NaNs) can stem from:",
+          "code_snippet": null,
+          "options": [
+            "A) Small learning rate",
+            "B) Softmax overflow at large logits; fix with scaling/clamping/mask correctness",
+            "C) Removing dropout",
+            "D) More steps"
+          ],
+          "correct_option": "B",
+          "explanation": "Large logits cause overflow; ensure masks and scaling."
+        },
+        {
+          "id": "q9",
+          "type": "mcq",
+          "question_text": "If training loss drops but samples look worse, possible cause:",
+          "code_snippet": null,
+          "options": [
+            "A) Perfect model",
+            "B) Loss-target mismatch (e.g., wrong scaling, incorrect target space) or overfitting",
+            "C) Beta schedule fixed",
+            "D) Proper CFG"
+          ],
+          "correct_option": "B",
+          "explanation": "Loss may not reflect sample quality if mis-implemented."
+        },
+        {
+          "id": "q10",
+          "type": "mcq",
+          "question_text": "OOM during training mitigations include:",
+          "code_snippet": null,
+          "options": [
+            "A) Increasing batch",
+            "B) Gradient accumulation, smaller resolution, fewer channels, mixed precision",
+            "C) Larger model",
+            "D) Remove checkpointing"
+          ],
+          "correct_option": "B",
+          "explanation": "Reduce memory footprint."
+        },
+        {
+          "id": "q11",
+          "type": "mcq",
+          "question_text": "Random color shifts in outputs can result from:",
+          "code_snippet": null,
+          "options": [
+            "A) Correct training",
+            "B) VAE decoding issues or latent scaling errors",
+            "C) CFG",
+            "D) Perfect metrics"
+          ],
+          "correct_option": "B",
+          "explanation": "Scale mismatch or VAE bugs cause shifts."
+        },
+        {
+          "id": "q12",
+          "type": "mcq",
+          "question_text": "Misaligned spatial output (shifted objects) may be caused by:",
+          "code_snippet": null,
+          "options": [
+            "A) Proper padding",
+            "B) Padding/crop inconsistencies between train and inference or control misalignment",
+            "C) Smaller LR",
+            "D) More EMA"
+          ],
+          "correct_option": "B",
+          "explanation": "Spatial misalignment usually due to preprocess mismatch."
+        },
+        {
+          "id": "q13",
+          "type": "mcq",
+          "question_text": "VRAM leak during training often comes from:",
+          "code_snippet": null,
+          "options": [
+            "A) Using with torch.no_grad",
+            "B) Holding computation graphs in lists (missing detach) or not zeroing optimizer states",
+            "C) Smaller batch",
+            "D) Lower resolution"
+          ],
+          "correct_option": "B",
+          "explanation": "Graphs kept in memory leak VRAM."
+        },
+        {
+          "id": "q14",
+          "type": "mcq",
+          "question_text": "If CFG outputs are identical to unconditional outputs:",
+          "code_snippet": null,
+          "options": [
+            "A) CFG works",
+            "B) Conditional branch may be broken or guidance weight zero",
+            "C) Too many steps",
+            "D) Beta high"
+          ],
+          "correct_option": "B",
+          "explanation": "Conditional path may not affect outputs."
+        },
+        {
+          "id": "q15",
+          "type": "mcq",
+          "question_text": "Temporal flicker in video diffusion can be reduced by:",
+          "code_snippet": null,
+          "options": [
+            "A) Removing temporal attention",
+            "B) Adding temporal losses/flow consistency or stronger temporal conditioning",
+            "C) Random cropping",
+            "D) Higher CFG"
+          ],
+          "correct_option": "B",
+          "explanation": "Temporal constraints improve consistency."
+        },
+        {
+          "id": "q16",
+          "type": "mcq",
+          "question_text": "Vanishing gradients in deep UNet may be mitigated by:",
+          "code_snippet": null,
+          "options": [
+            "A) Removing residuals",
+            "B) Proper initialization, residual connections, normalization, and learning rate tuning",
+            "C) Larger beta only",
+            "D) Removing EMA"
+          ],
+          "correct_option": "B",
+          "explanation": "Resnets/normalization help gradient flow."
+        },
+        {
+          "id": "q17",
+          "type": "mcq",
+          "question_text": "If sampler diverges at low timesteps, you might:",
+          "code_snippet": null,
+          "options": [
+            "A) Increase step size",
+            "B) Use smaller eta, lower guidance, or more steps near t=0",
+            "C) Remove model",
+            "D) Upscale images"
+          ],
+          "correct_option": "B",
+          "explanation": "Stabilize near data regime with finer steps/lower guidance."
+        },
+        {
+          "id": "q18",
+          "type": "mcq",
+          "question_text": "Incorrect timestep embedding shape causes:",
+          "code_snippet": null,
+          "options": [
+            "A) Perfect training",
+            "B) Runtime shape errors or silent misconditioning",
+            "C) Faster sampling",
+            "D) Better EMA"
+          ],
+          "correct_option": "B",
+          "explanation": "Embedding must broadcast correctly."
+        },
+        {
+          "id": "q19",
+          "type": "mcq",
+          "question_text": "If loss is near zero but samples are pure noise, check:",
+          "code_snippet": null,
+          "options": [
+            "A) Nothing",
+            "B) Target/label mismatch (predicting wrong output), normalization, scheduler mapping",
+            "C) More steps",
+            "D) Higher LR"
+          ],
+          "correct_option": "B",
+          "explanation": "Likely predicting wrong target or scaling."
+        },
+        {
+          "id": "q20",
+          "type": "mcq",
+          "question_text": "Large batch with no gradient accumulation can hide bugs because:",
+          "code_snippet": null,
+          "options": [
+            "A) It always fixes NaNs",
+            "B) More averaging can mask instability that appears at smaller batches",
+            "C) It speeds everything",
+            "D) It changes beta"
+          ],
+          "correct_option": "B",
+          "explanation": "Large batches can hide noise; smaller batches reveal instability."
+        }
+      ]
+    },
+    {
+      "section_id": "B",
+      "section_title": "Logic & Implementation Puzzles",
+      "total_questions": 20,
+      "marking_scheme": { "correct": 2.0, "incorrect": -0.5 },
+      "questions": [
+        {
+          "id": "q21",
+          "type": "parsons_problem",
+          "question_text": "Arrange to detect NaNs in parameters after step.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "for n, p in model.named_parameters():" },
+            { "id": "b2", "text": "    if torch.isnan(p).any(): return n" },
+            { "id": "b3", "text": "return None" },
+            { "id": "b4", "text": "def find_nan_param(model):" }
+          ],
+          "correct_order": ["b4", "b1", "b2", "b3"],
+          "explanation": "Scan params for NaN."
+        },
+        {
+          "id": "q22",
+          "type": "parsons_problem",
+          "question_text": "Arrange gradient norm logging for debugging.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "total = torch.norm(torch.stack([p.grad.norm() for p in model.parameters() if p.grad is not None]))" },
+            { "id": "b2", "text": "return total.item()" },
+            { "id": "b3", "text": "def grad_norm(model):" }
+          ],
+          "correct_order": ["b3", "b1", "b2"],
+          "explanation": "Aggregate grad norms."
+        },
+        {
+          "id": "q23",
+          "type": "parsons_problem",
+          "question_text": "Arrange to clamp guidance weight to avoid overshoot.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "w = torch.clamp(w, 0.0, w_max)" },
+            { "id": "b2", "text": "return w" },
+            { "id": "b3", "text": "def clamp_guidance(w, w_max=7.5):" }
+          ],
+          "correct_order": ["b3", "b1", "b2"],
+          "explanation": "Prevent excessive CFG."
+        },
+        {
+          "id": "q24",
+          "type": "parsons_problem",
+          "question_text": "Arrange to validate VAE scaling consistency.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "z = vae.encode(img).latent_dist.sample() * scale" },
+            { "id": "b2", "text": "img_rec = vae.decode(z/scale).sample" },
+            { "id": "b3", "text": "return (img - img_rec).abs().mean()" },
+            { "id": "b4", "text": "def check_vae_scale(vae, img, scale=0.18215):" }
+          ],
+          "correct_order": ["b4", "b1", "b2", "b3"],
+          "explanation": "Encode/decode with scale to verify reconstruction."
+        },
+        {
+          "id": "q25",
+          "type": "parsons_problem",
+          "question_text": "Arrange to guard against AMP overflow.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "if scaler.get_scale() > max_scale: scaler.update(new_scale=max_scale)" },
+            { "id": "b2", "text": "return scaler" },
+            { "id": "b3", "text": "def cap_scaler(scaler, max_scale=2**15):" }
+          ],
+          "correct_order": ["b3", "b1", "b2"],
+          "explanation": "Limit scaler growth."
+        },
+        {
+          "id": "q26",
+          "type": "parsons_problem",
+          "question_text": "Arrange to detect attention mask issues (inf in logits).",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "logits = attn_logits(q, k, mask)" },
+            { "id": "b2", "text": "if torch.isinf(logits).any(): raise ValueError('mask issue')" },
+            { "id": "b3", "text": "return logits" },
+            { "id": "b4", "text": "def safe_attn_logits(attn_logits, q, k, mask):" }
+          ],
+          "correct_order": ["b4", "b1", "b2", "b3"],
+          "explanation": "Check for inf due to bad mask."
+        },
+        {
+          "id": "q27",
+          "type": "parsons_problem",
+          "question_text": "Arrange to early exit when grad norm is NaN.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "if torch.isnan(gn): raise RuntimeError('NaN grad norm')" },
+            { "id": "b2", "text": "gn = grad_norm(model)" },
+            { "id": "b3", "text": "return gn" },
+            { "id": "b4", "text": "def check_grad(model):" }
+          ],
+          "correct_order": ["b4", "b2", "b1", "b3"],
+          "explanation": "Abort on NaN gradients."
+        },
+        {
+          "id": "q28",
+          "type": "parsons_problem",
+          "question_text": "Arrange to test sampler stability at low timesteps with smaller eta.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "for eta in [0.0, 0.2, 0.5]:" },
+            { "id": "b2", "text": "    imgs.append(sample_fn(eta=eta, steps=steps))" },
+            { "id": "b3", "text": "return imgs" },
+            { "id": "b4", "text": "def sweep_eta(sample_fn, steps):" }
+          ],
+          "correct_order": ["b4", "b1", "b2", "b3"],
+          "explanation": "Sweep eta to find stable range."
+        },
+        {
+          "id": "q29",
+          "type": "parsons_problem",
+          "question_text": "Arrange to check for VRAM leaks by tracking allocated bytes.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "before = torch.cuda.memory_allocated()" },
+            { "id": "b2", "text": "after = torch.cuda.memory_allocated()" },
+            { "id": "b3", "text": "return after - before" },
+            { "id": "b4", "text": "def mem_leak(fn):" },
+            { "id": "b5", "text": "fn()" }
+          ],
+          "correct_order": ["b4", "b1", "b5", "b2", "b3"],
+          "explanation": "Compare memory before/after operation."
+        },
+        {
+          "id": "q30",
+          "type": "parsons_problem",
+          "question_text": "Arrange to detect repeated outputs (mode collapse) across seeds.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "imgs = [sample_fn(seed=i) for i in range(n)]" },
+            { "id": "b2", "text": "pairs = [(i,j) for i in range(n) for j in range(i)]" },
+            { "id": "b3", "text": "sim = [lpips(imgs[i], imgs[j]) for (i,j) in pairs]" },
+            { "id": "b4", "text": "return torch.tensor(sim).mean()" },
+            { "id": "b5", "text": "def collapse_score(sample_fn, lpips, n):" }
+          ],
+          "correct_order": ["b5", "b1", "b2", "b3", "b4"],
+          "explanation": "High similarity may indicate collapse."
+        },
+        {
+          "id": "q31",
+          "type": "fill_in_blank",
+          "question_text": "NaNs often arise from gradient ______ or invalid math.",
+          "correct_answer": "explosion",
+          "explanation": "Exploding grads/overflow."
+        },
+        {
+          "id": "q32",
+          "type": "fill_in_blank",
+          "question_text": "CFG overshoot can be mitigated by lowering ______ or increasing steps.",
+          "correct_answer": "guidance weight w",
+          "explanation": "Lower w stabilizes."
+        },
+        {
+          "id": "q33",
+          "type": "fill_in_blank",
+          "question_text": "Checkerboard artifacts often come from ______ convolutions in decoders.",
+          "correct_answer": "transposed",
+          "explanation": "Transposed conv upsampling."
+        },
+        {
+          "id": "q34",
+          "type": "fill_in_blank",
+          "question_text": "AMP overflow can produce Inf/NaN; adjust the ______ scaler.",
+          "correct_answer": "gradient/loss",
+          "explanation": "Loss/grad scaling."
+        },
+        {
+          "id": "q35",
+          "type": "fill_in_blank",
+          "question_text": "VRAM leaks often mean tensors are kept with ______=True unnecessarily.",
+          "correct_answer": "requires_grad",
+          "explanation": "Graphs retained when not needed."
+        },
+        {
+          "id": "q36",
+          "type": "fill_in_blank",
+          "question_text": "Mismatch between train/inference padding can shift output ______.",
+          "correct_answer": "spatial alignment",
+          "explanation": "Different padding moves features."
+        },
+        {
+          "id": "q37",
+          "type": "fill_in_blank",
+          "question_text": "Temporal flicker can be reduced with ______ consistency losses.",
+          "correct_answer": "optical-flow/temporal",
+          "explanation": "Flow-based temporal losses."
+        },
+        {
+          "id": "q38",
+          "type": "fill_in_blank",
+          "question_text": "If conditional and unconditional outputs match, the conditional path may be ______.",
+          "correct_answer": "broken/ignored",
+          "explanation": "CFG not applied."
+        },
+        {
+          "id": "q39",
+          "type": "fill_in_blank",
+          "question_text": "Softmax overflow occurs when logits are too ______.",
+          "correct_answer": "large",
+          "explanation": "Large logits cause Inf."
+        },
+        {
+          "id": "q40",
+          "type": "fill_in_blank",
+          "question_text": "Loss near zero but noisy outputs suggests target ______.",
+          "correct_answer": "mismatch",
+          "explanation": "Wrong target or scaling."
+        }
+      ]
+    },
+    {
+      "section_id": "C",
+      "section_title": "Deep Theory & Coding",
+      "total_questions": 10,
+      "marking_scheme": { "correct": 4.0, "incorrect": -1.0 },
+      "questions": [
+        {
+          "id": "q41",
+          "type": "theory_open_ended",
+          "question_text": "Provide a systematic debugging plan for NaNs in diffusion training (AMP, LR, clipping, beta schedule, data).",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Check AMP scaler/overflow, reduce LR",
+              "Clip gradients, inspect beta schedule/variance positivity",
+              "Validate data ranges/normalization",
+              "Reproduce with small batch and isolate offending step"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q42",
+          "type": "theory_open_ended",
+          "question_text": "Discuss diagnosing mode collapse in diffusion vs GANs and propose fixes.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Identify low diversity across seeds/prompts",
+              "Check guidance strength, sampler steps, overfitting",
+              "Increase noise steps, lower CFG, diversify training data",
+              "Contrast with GAN collapse mechanisms"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q43",
+          "type": "theory_open_ended",
+          "question_text": "Explain how VAE scale mismatches propagate into sampling artifacts and how to detect/correct them.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Latent scaling affects magnitude of noise/signal",
+              "Mismatch yields washed-out/saturated outputs",
+              "Detect via encode-decode test; correct by consistent scaling",
+              "Adjust sampler or retrain if necessary"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q44",
+          "type": "theory_open_ended",
+          "question_text": "Design a robustness evaluation suite: noise sensitivity, timestep reschedule stress, CFG sweeps, resolution shifts.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Test multiple schedulers/eta, CFG ranges",
+              "Resolution/aspect changes",
+              "Report failures (NaNs, artifacts, collapse)",
+              "Automation and logging"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q45",
+          "type": "theory_open_ended",
+          "question_text": "Explain how to isolate bugs in conditioning paths (text/control) and verify CFG effectiveness.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Ablate condition (null prompt), compare outputs",
+              "Check differences between conditional/unconditional predictions",
+              "Verify token masks/lengths",
+              "Measure CFG deltas visually/quantitatively"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q46",
+          "type": "theory_open_ended",
+          "question_text": "Discuss strategies to stabilize few-step samplers (DPM-Solver/Heun) under high guidance.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Lower guidance, add noise/eta, more steps near t=0",
+              "Clamp predicted x0/dynamic thresholding",
+              "Use higher-order solvers carefully",
+              "Monitor saturation and adjust schedules"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q47",
+          "type": "theory_open_ended",
+          "question_text": "Outline a procedure to detect and fix attention mask or positional encoding bugs that cause spatial misalignment.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Unit tests for mask shapes, non-inf logits",
+              "Visualize attention maps for simple prompts",
+              "Check positional encoding consistency across resolutions",
+              "Fix padding/cropping discrepancies"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q48",
+          "type": "theory_open_ended",
+          "question_text": "Explain how to diagnose and reduce temporal flicker in video diffusion, including training and sampling adjustments.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Add temporal losses/conditioning, use 3D convs/temporal attn",
+              "Flow-consistent training, augmentations",
+              "Sampler: stronger temporal conditioning, lower guidance, smoother schedules",
+              "Evaluate with tLPIPS/warp error"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q49",
+          "type": "theory_open_ended",
+          "question_text": "Propose logging/monitoring signals (loss stats, grad norms, SNR buckets, sample grids) to catch issues early.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Track loss histograms, grad norms, scaler values",
+              "Bucketed loss by timestep/SNR",
+              "Sample grids with fixed prompts/seeds",
+              "Alerts on NaN/Inf or divergence"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q50",
+          "type": "theory_open_ended",
+          "question_text": "Compare debugging workflows for training vs inference issues in diffusion systems.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Training: check data, targets, loss, gradients, schedules, mode/train flags",
+              "Inference: scheduler mapping, CFG, VAE scaling, checkpoint integrity",
+              "Different tools (grad checks vs visual sampler tests)",
+              "Systematic isolation of components"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        }
+      ]
+    }
+  ]
+}

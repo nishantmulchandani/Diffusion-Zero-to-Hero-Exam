@@ -1,0 +1,656 @@
+{
+  "module_name": "03_Latent_Diffusion",
+  "difficulty_level": "Hard",
+  "rendering_note": "Math tokens appear as plain text (e.g., alpha_bar_t, sqrt(beta(t)), mu, sigma^2). Render them with LaTeX/KaTeX/MathJax in the frontend.",
+  "sections": [
+    {
+      "section_id": "A",
+      "section_title": "Conceptual Recall (MCQs)",
+      "total_questions": 20,
+      "marking_scheme": { "correct": 2.0, "incorrect": -0.5 },
+      "questions": [
+        {
+          "id": "q1",
+          "type": "mcq",
+          "question_text": "CLIP text encoder with hidden size d_model produces token embeddings of shape:",
+          "code_snippet": null,
+          "options": [
+            "A) (B, d_model)",
+            "B) (B, L, d_model)",
+            "C) (L, B, d_model)",
+            "D) (B, d_model, L)"
+          ],
+          "correct_option": "B",
+          "explanation": "Token-level outputs retain sequence length L; pooling yields a single vector."
+        },
+        {
+          "id": "q2",
+          "type": "mcq",
+          "question_text": "Classifier-free guidance scales predicted noise using:",
+          "code_snippet": null,
+          "options": [
+            "A) eps_guided = eps_uncond + w * (eps_uncond - eps_text)",
+            "B) eps_guided = eps_uncond - w * (eps_text - eps_uncond)",
+            "C) eps_guided = eps_text + w * (eps_text - eps_uncond)",
+            "D) eps_guided = w * eps_text"
+          ],
+          "correct_option": "C",
+          "explanation": "Guidance extrapolates away from unconditional toward conditional noise."
+        },
+        {
+          "id": "q3",
+          "type": "mcq",
+          "question_text": "In latent diffusion, the autoencoder latent z typically has spatial size:",
+          "code_snippet": null,
+          "options": [
+            "A) Same as input image",
+            "B) Downsampled by factor f in H and W",
+            "C) Up-sampled by factor f",
+            "D) Flattened to length H*W"
+          ],
+          "correct_option": "B",
+          "explanation": "Latents are spatially compressed (e.g., f=8) to reduce compute."
+        },
+        {
+          "id": "q4",
+          "type": "mcq",
+          "question_text": "Why train diffusion in latent space rather than pixel space?",
+          "code_snippet": null,
+          "options": [
+            "A) To avoid reconstruction losses",
+            "B) To reduce dimensionality and improve throughput",
+            "C) To remove need for decoder",
+            "D) To enforce discreteness"
+          ],
+          "correct_option": "B",
+          "explanation": "Lower spatial resolution shrinks compute while keeping perceptual features."
+        },
+        {
+          "id": "q5",
+          "type": "mcq",
+          "question_text": "Noise schedulers that maintain constant SNR across steps primarily adjust:",
+          "code_snippet": null,
+          "options": [
+            "A) beta_t linearly",
+            "B) log SNR(t) linearly",
+            "C) alpha_t quadratically",
+            "D) timestep embedding frequency"
+          ],
+          "correct_option": "B",
+          "explanation": "Cosine schedules linearize log SNR for balanced weighting."
+        },
+        {
+          "id": "q6",
+          "type": "mcq",
+          "question_text": "CLIP text encoder is frozen during latent diffusion training mainly to:",
+          "code_snippet": null,
+          "options": [
+            "A) Save GPU memory and preserve semantic alignment",
+            "B) Enable half-precision",
+            "C) Increase vocab size",
+            "D) Reduce context length"
+          ],
+          "correct_option": "A",
+          "explanation": "Frozen CLIP keeps alignment with pretraining and saves compute."
+        },
+        {
+          "id": "q7",
+          "type": "mcq",
+          "question_text": "For classifier-free guidance, unconditional tokens are produced by:",
+          "code_snippet": null,
+          "options": [
+            "A) Randomizing order of tokens",
+            "B) Dropping all tokens (empty prompt) or using special null embedding",
+            "C) Adding Gaussian noise to tokens",
+            "D) Replacing tokens with [UNK]"
+          ],
+          "correct_option": "B",
+          "explanation": "Guidance uses a null condition to form unconditional branch."
+        },
+        {
+          "id": "q8",
+          "type": "mcq",
+          "question_text": "Stable noise schedulers help because training loss weighting implicitly scales with:",
+          "code_snippet": null,
+          "options": [
+            "A) beta_t^2",
+            "B) SNR(t)",
+            "C) timestep index t only",
+            "D) decoder weights"
+          ],
+          "correct_option": "B",
+          "explanation": "Noise prediction MSE is weighted by SNR of each timestep."
+        },
+        {
+          "id": "q9",
+          "type": "mcq",
+          "question_text": "Latent diffusion decoder converts denoised latents to pixels using:",
+          "code_snippet": null,
+          "options": [
+            "A) Fixed linear projection",
+            "B) Learned convolutional decoder (often VAE-style)",
+            "C) FFT inverse only",
+            "D) Token un-embedding"
+          ],
+          "correct_option": "B",
+          "explanation": "A learned decoder reconstructs RGB space from latents."
+        },
+        {
+          "id": "q10",
+          "type": "mcq",
+          "question_text": "Classifier-free guidance weight w = 0 yields:",
+          "code_snippet": null,
+          "options": [
+            "A) Deterministic sampling",
+            "B) Unconditional sampling",
+            "C) Maximum guidance",
+            "D) Divergent reverse process"
+          ],
+          "correct_option": "B",
+          "explanation": "Zero guidance uses unconditional branch only."
+        },
+        {
+          "id": "q11",
+          "type": "mcq",
+          "question_text": "Log-SNR for cosine scheduler at time t in [0,1] behaves approximately:",
+          "code_snippet": null,
+          "options": [
+            "A) Linear in t",
+            "B) Quadratic in t",
+            "C) Constant",
+            "D) Exponential in t"
+          ],
+          "correct_option": "A",
+          "explanation": "Cosine schedule is designed to make log-SNR linearized across steps."
+        },
+        {
+          "id": "q12",
+          "type": "mcq",
+          "question_text": "When conditioning on image embeddings (e.g., CLIP image encoder) for image-to-image diffusion, keys/values come from:",
+          "code_snippet": null,
+          "options": [
+            "A) The noisy latent x_t",
+            "B) The encoded condition image tokens",
+            "C) Random Gaussian tokens",
+            "D) Timestep embedding only"
+          ],
+          "correct_option": "B",
+          "explanation": "Cross-attention keys/values use conditional image tokens."
+        },
+        {
+          "id": "q13",
+          "type": "mcq",
+          "question_text": "Latent VAE posterior q(z|x) is trained with:",
+          "code_snippet": null,
+          "options": [
+            "A) Pure MSE",
+            "B) ELBO combining reconstruction + KL",
+            "C) Cross-entropy",
+            "D) Wasserstein only"
+          ],
+          "correct_option": "B",
+          "explanation": "Standard VAE objective trains encoder-decoder pair."
+        },
+        {
+          "id": "q14",
+          "type": "mcq",
+          "question_text": "Classifier-free guidance typically doubles forward passes because:",
+          "code_snippet": null,
+          "options": [
+            "A) Two timesteps are computed simultaneously",
+            "B) Need unconditional and conditional model evaluations",
+            "C) Decoder runs twice",
+            "D) Scheduler steps are repeated"
+          ],
+          "correct_option": "B",
+          "explanation": "Guided sampling evaluates both branches per step."
+        },
+        {
+          "id": "q15",
+          "type": "mcq",
+          "question_text": "If latents are scaled by factor s before diffusion training, at sampling one must:",
+          "code_snippet": null,
+          "options": [
+            "A) Ignore scaling",
+            "B) Multiply decoded image by s",
+            "C) Apply inverse scaling (divide by s) before decoding",
+            "D) Add s to the latent"
+          ],
+          "correct_option": "C",
+          "explanation": "Consistent scaling ensures decoder sees data distribution seen in training."
+        },
+        {
+          "id": "q16",
+          "type": "mcq",
+          "question_text": "Why add train-time token dropout for classifier-free guidance?",
+          "code_snippet": null,
+          "options": [
+            "A) To regularize text encoder",
+            "B) To let model learn unconditional branch within same weights",
+            "C) To shorten sequences",
+            "D) To speed up CLIP"
+          ],
+          "correct_option": "B",
+          "explanation": "Token dropout simulates null prompts for joint conditional/unconditional training."
+        },
+        {
+          "id": "q17",
+          "type": "mcq",
+          "question_text": "In DDIM sampling, deterministic updates depend on:",
+          "code_snippet": null,
+          "options": [
+            "A) Setting eta=0 to remove stochasticity",
+            "B) Setting eta=1 to maximize noise",
+            "C) Using higher-order solvers",
+            "D) Using smaller batch size"
+          ],
+          "correct_option": "A",
+          "explanation": "DDIM with eta=0 yields deterministic trajectory."
+        },
+        {
+          "id": "q18",
+          "type": "mcq",
+          "question_text": "Dynamic thresholding in latent diffusion clips predicted x0 magnitude to:",
+          "code_snippet": null,
+          "options": [
+            "A) Fixed ±1",
+            "B) Data-dependent percentile (e.g., 0.995) of absolute values",
+            "C) Beta_t",
+            "D) Guidance weight w"
+          ],
+          "correct_option": "B",
+          "explanation": "Percentile clipping stabilizes extreme predictions without fixed bound."
+        },
+        {
+          "id": "q19",
+          "type": "mcq",
+          "question_text": "Noise schedule shifting to higher SNR early primarily improves:",
+          "code_snippet": null,
+          "options": [
+            "A) Late-step sharpness",
+            "B) Reconstruction of coarse structure",
+            "C) KL term of VAE",
+            "D) Token length"
+          ],
+          "correct_option": "B",
+          "explanation": "High SNR early preserves global structure; fine detail emerges later."
+        },
+        {
+          "id": "q20",
+          "type": "mcq",
+          "question_text": "Which statement about CLIP text encoder outputs is correct for cross-attention conditioning?",
+          "code_snippet": null,
+          "options": [
+            "A) Only pooled CLS is used",
+            "B) Token sequence (without CLS) often conditions cross-attention",
+            "C) Only positional encodings are used",
+            "D) Outputs are discarded after training"
+          ],
+          "correct_option": "B",
+          "explanation": "Per-token embeddings allow spatial alignment via cross-attention."
+        }
+      ]
+    },
+    {
+      "section_id": "B",
+      "section_title": "Logic & Implementation Puzzles",
+      "total_questions": 20,
+      "marking_scheme": { "correct": 2.0, "incorrect": -0.5 },
+      "questions": [
+        {
+          "id": "q21",
+          "type": "parsons_problem",
+          "question_text": "Arrange to compute classifier-free guided noise prediction.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "eps_u = model(x_t, t, cond=None)" },
+            { "id": "b2", "text": "eps_c = model(x_t, t, cond=cond)" },
+            { "id": "b3", "text": "return eps_u + w * (eps_c - eps_u)" },
+            { "id": "b4", "text": "def cfg(model, x_t, t, cond, w):" }
+          ],
+          "correct_order": ["b4", "b1", "b2", "b3"],
+          "explanation": "Unconditional + scaled difference implements CFG."
+        },
+        {
+          "id": "q22",
+          "type": "parsons_problem",
+          "question_text": "Arrange to drop text with probability p during training for CFG.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "if torch.rand(1) < p: cond = null_token" },
+            { "id": "b2", "text": "return cond" },
+            { "id": "b3", "text": "def dropout_cond(cond, p, null_token):" }
+          ],
+          "correct_order": ["b3", "b1", "b2"],
+          "explanation": "Randomly replace with null to learn unconditional branch."
+        },
+        {
+          "id": "q23",
+          "type": "parsons_problem",
+          "question_text": "Arrange to decode latents with a VAE decoder.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "x = decoder(z)" },
+            { "id": "b2", "text": "def decode(z, decoder):" },
+            { "id": "b3", "text": "return x.clamp(-1, 1)" }
+          ],
+          "correct_order": ["b2", "b1", "b3"],
+          "explanation": "Decode then clamp to valid pixel range."
+        },
+        {
+          "id": "q24",
+          "type": "parsons_problem",
+          "question_text": "Arrange DDIM deterministic update for x_{t-1}.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "alpha_bar_prev = alpha_bar[t-1]" },
+            { "id": "b2", "text": "x0_pred = (x_t - sqrt_one_minus_alpha_bar[t] * eps) / torch.sqrt(alpha_bar[t])" },
+            { "id": "b3", "text": "return torch.sqrt(alpha_bar_prev) * x0_pred + torch.sqrt(1 - alpha_bar_prev) * eps" },
+            { "id": "b4", "text": "def ddim_step(x_t, t, eps, alpha_bar):" }
+          ],
+          "correct_order": ["b4", "b1", "b2", "b3"],
+          "explanation": "Predict x0 then deterministic mapping to previous step."
+        },
+        {
+          "id": "q25",
+          "type": "parsons_problem",
+          "question_text": "Arrange to compute log-SNR given alpha_bar.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "return torch.log(alpha_bar) - torch.log1p(-alpha_bar)" },
+            { "id": "b2", "text": "def log_snr(alpha_bar):" }
+          ],
+          "correct_order": ["b2", "b1"],
+          "explanation": "log(alpha_bar / (1 - alpha_bar)) yields log-SNR."
+        },
+        {
+          "id": "q26",
+          "type": "parsons_problem",
+          "question_text": "Arrange to apply dynamic thresholding on predicted x0.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "s = x0.abs().quantile(q, dim=[1,2,3], keepdim=True)" },
+            { "id": "b2", "text": "x0 = x0.clamp(-s, s) / s" },
+            { "id": "b3", "text": "def dyn_thresh(x0, q=0.995):" },
+            { "id": "b4", "text": "return x0" }
+          ],
+          "correct_order": ["b3", "b1", "b2", "b4"],
+          "explanation": "Clip by percentile then normalize."
+        },
+        {
+          "id": "q27",
+          "type": "parsons_problem",
+          "question_text": "Arrange to scale latent before feeding into diffusion model.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "z = z / scale" },
+            { "id": "b2", "text": "def scale_latent(z, scale=0.18215):" },
+            { "id": "b3", "text": "return z" }
+          ],
+          "correct_order": ["b2", "b1", "b3"],
+          "explanation": "Stable Diffusion scales latents to match model training distribution."
+        },
+        {
+          "id": "q28",
+          "type": "parsons_problem",
+          "question_text": "Arrange to get text embeddings and mask for cross-attention.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "tokens = tokenizer(text, return_tensors='pt', padding='max_length', max_length=77)" },
+            { "id": "b2", "text": "emb = clip.encode_text(tokens['input_ids'])" },
+            { "id": "b3", "text": "mask = tokens['attention_mask'].bool()" },
+            { "id": "b4", "text": "return emb, mask" },
+            { "id": "b5", "text": "def encode_text(clip, tokenizer, text):" }
+          ],
+          "correct_order": ["b5", "b1", "b2", "b3", "b4"],
+          "explanation": "Tokenize, encode, and pass attention mask."
+        },
+        {
+          "id": "q29",
+          "type": "parsons_problem",
+          "question_text": "Arrange to interpolate sigma schedule between two endpoints.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "t = torch.linspace(0, 1, steps)" },
+            { "id": "b2", "text": "sigma = sigma_min * (sigma_max / sigma_min) ** t" },
+            { "id": "b3", "text": "def geometric_sigma(steps, sigma_min, sigma_max):" },
+            { "id": "b4", "text": "return sigma" }
+          ],
+          "correct_order": ["b3", "b1", "b2", "b4"],
+          "explanation": "Geometric progression covers VE-like noise levels."
+        },
+        {
+          "id": "q30",
+          "type": "parsons_problem",
+          "question_text": "Arrange to compute unconditional tokens for batch with mask.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "tokens['input_ids'][mask] = null_id" },
+            { "id": "b2", "text": "def make_uncond(tokens, mask, null_id):" },
+            { "id": "b3", "text": "return tokens" }
+          ],
+          "correct_order": ["b2", "b1", "b3"],
+          "explanation": "Replace selected rows with null token id."
+        },
+        {
+          "id": "q31",
+          "type": "fill_in_blank",
+          "question_text": "CFG noise: eps_guided = eps_u + w * ( ______ ).",
+          "correct_answer": "eps_c - eps_u",
+          "explanation": "Scaled residual from conditional to unconditional."
+        },
+        {
+          "id": "q32",
+          "type": "fill_in_blank",
+          "question_text": "Log-SNR = log( alpha_bar / ______ ).",
+          "correct_answer": " (1 - alpha_bar) ",
+          "explanation": "Defines weighting across timesteps."
+        },
+        {
+          "id": "q33",
+          "type": "fill_in_blank",
+          "question_text": "CLIP token embedding dimension often equals ______.",
+          "correct_answer": "text_encoder.config.hidden_size",
+          "explanation": "Hidden size sets channel width."
+        },
+        {
+          "id": "q34",
+          "type": "fill_in_blank",
+          "question_text": "Dynamic thresholding clips x0 to percentile q, then divides by ______.",
+          "correct_answer": "that same percentile value",
+          "explanation": "Keeps outputs in stable range."
+        },
+        {
+          "id": "q35",
+          "type": "fill_in_blank",
+          "question_text": "DDIM with eta=0 yields a ______ trajectory.",
+          "correct_answer": "deterministic",
+          "explanation": "No additional noise injected."
+        },
+        {
+          "id": "q36",
+          "type": "fill_in_blank",
+          "question_text": "During token dropout, probability p controls frequency of ______ prompts.",
+          "correct_answer": "unconditional",
+          "explanation": "More drops teach null-conditional branch."
+        },
+        {
+          "id": "q37",
+          "type": "fill_in_blank",
+          "question_text": "Geometric sigma schedule uses sigma(t) = sigma_min * (sigma_max/sigma_min) ^ ______.",
+          "correct_answer": "t",
+          "explanation": "Exponentially increases noise."
+        },
+        {
+          "id": "q38",
+          "type": "fill_in_blank",
+          "question_text": "Latent scaling constant for Stable Diffusion v1 is approximately ______.",
+          "correct_answer": "0.18215",
+          "explanation": "Normalization used to match VAE output scale."
+        },
+        {
+          "id": "q39",
+          "type": "fill_in_blank",
+          "question_text": "CLIP text encoder commonly uses max token length ______.",
+          "correct_answer": "77",
+          "explanation": "Standard context length for OpenAI CLIP models."
+        },
+        {
+          "id": "q40",
+          "type": "fill_in_blank",
+          "question_text": "To reconstruct pixels, decoded image is often scaled from [-1,1] to ______.",
+          "correct_answer": "[0,1]",
+          "explanation": "Maps normalized outputs back to valid range."
+        }
+      ]
+    },
+    {
+      "section_id": "C",
+      "section_title": "Deep Theory & Coding",
+      "total_questions": 10,
+      "marking_scheme": { "correct": 4.0, "incorrect": -1.0 },
+      "questions": [
+        {
+          "id": "q41",
+          "type": "theory_open_ended",
+          "question_text": "Derive the classifier-free guidance formula from a linear combination of conditional and unconditional score estimates. Discuss assumptions on linearity and model calibration.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Express eps_guided = eps_u + w (eps_c - eps_u)",
+              "Justify treating scores as approximately linear in conditioning strength",
+              "Mention calibration of unconditional branch to avoid over-saturation",
+              "Note trade-off between fidelity and diversity as w varies"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q42",
+          "type": "theory_open_ended",
+          "question_text": "Explain how cosine noise schedules balance SNR across timesteps and why this improves latent diffusion stability.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Log-SNR roughly linear in timestep",
+              "Reduces overweighting of mid/high noise steps",
+              "Improves gradient magnitudes for early steps",
+              "Connect to reduced loss variance and better sample quality"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q43",
+          "type": "theory_open_ended",
+          "question_text": "Compare latent-space diffusion vs pixel-space diffusion in terms of computational complexity, memory, and perceptual quality.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Latent reduces spatial dimension -> lower FLOPs/memory",
+              "Potential reconstruction bias from autoencoder",
+              "Perceptual quality depends on VAE capacity",
+              "Sampling speed and smaller UNet feasible in latent space"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q44",
+          "type": "theory_open_ended",
+          "question_text": "Describe how token dropout is used during training to enable classifier-free guidance and its effect on conditional likelihood.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Randomly replace conditioning with null prompt",
+              "Model learns both conditional and unconditional behaviors",
+              "Acts like data augmentation for conditional distribution",
+              "Effectively mixes likelihoods; improves robustness to weak prompts"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q45",
+          "type": "theory_open_ended",
+          "question_text": "Show how DDIM sampling arises from non-Markovian guidance of x0 predictions and explain why it can be deterministic.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Use x0 prediction to construct deterministic path",
+              "Eta parameter controls stochasticity; eta=0 removes noise",
+              "Non-Markovian because steps depend on aggregated past via x0",
+              "Maintains same marginals as DDPM under certain conditions"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q46",
+          "type": "theory_open_ended",
+          "question_text": "Discuss why dynamic thresholding improves sample quality in latent diffusion and how percentile choice affects sharpness vs stability.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Clips extreme x0 predictions to avoid saturation",
+              "Percentile controls aggressiveness; high q keeps detail but risks spikes",
+              "Reduces exploding values before decoder",
+              "Balances sharpness (higher q) vs stability (lower q)"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q47",
+          "type": "theory_open_ended",
+          "question_text": "Explain how cross-attention integrates CLIP text embeddings into the UNet and why per-token conditioning outperforms CLS-only for spatial alignment.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Queries from latent features attend to text keys/values",
+              "Per-token embeddings capture localized semantics",
+              "CLS-only loses positional nuance",
+              "Improves spatial grounding of objects and attributes"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q48",
+          "type": "theory_open_ended",
+          "question_text": "Provide the derivation of log-SNR weighting for noise-prediction loss and discuss how it motivates alternative loss scalings.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Loss weights relate to variance of noise term",
+              "Log-SNR influences gradient magnitude per timestep",
+              "Alternative weightings (e.g., v-prediction) can balance scales",
+              "Connect to improved stability across t distribution"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q49",
+          "type": "theory_open_ended",
+          "question_text": "Analyze the effect of latent scaling constants (e.g., 0.18215) on training stability and sampling fidelity.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Scaling normalizes latent variance seen by UNet",
+              "Mismatch causes over/under-estimation of noise",
+              "Consistent scaling needed between train and inference",
+              "Impacts decoder reconstruction range and saturation"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q50",
+          "type": "theory_open_ended",
+          "question_text": "Discuss trade-offs between guidance strength w and sample diversity; propose heuristics to choose w for different tasks.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Higher w increases fidelity/conditioning, reduces diversity",
+              "Lower w increases diversity but may drift from prompt",
+              "Heuristics: lower w for creative tasks, higher for accuracy",
+              "Mention saturation/overexposure artifacts at large w"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        }
+      ]
+    }
+  ]
+}

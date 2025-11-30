@@ -1,0 +1,657 @@
+{
+  "module_name": "07_Schedulers_and_Solvers",
+  "difficulty_level": "Hard",
+  "rendering_note": "Math tokens appear as plain text (e.g., alpha_bar_t, sqrt(beta(t)), mu, sigma^2). Render them with LaTeX/KaTeX/MathJax in the frontend.",
+  "sections": [
+    {
+      "section_id": "A",
+      "section_title": "Conceptual Recall (MCQs)",
+      "total_questions": 20,
+      "marking_scheme": { "correct": 2.0, "incorrect": -0.5 },
+      "questions": [
+        {
+          "id": "q1",
+          "type": "mcq",
+          "question_text": "DDIM with eta = 0 differs from DDPM sampling primarily because:",
+          "code_snippet": null,
+          "options": [
+            "A) It ignores timesteps",
+            "B) It uses deterministic non-Markovian updates guided by x0 predictions",
+            "C) It replaces eps prediction with KL minimization",
+            "D) It doubles noise variance each step"
+          ],
+          "correct_option": "B",
+          "explanation": "DDIM removes injected noise; trajectory depends on accumulated x0 predictions."
+        },
+        {
+          "id": "q2",
+          "type": "mcq",
+          "question_text": "PLMS (pseudo-linear multistep) sampling reduces error by:",
+          "code_snippet": null,
+          "options": [
+            "A) Using adaptive beta schedules",
+            "B) Reusing previous noise predictions in a linear multistep formula",
+            "C) Training an extra model for variance",
+            "D) Switching to VE SDE mid-run"
+          ],
+          "correct_option": "B",
+          "explanation": "PLMS forms a multistep solver with past eps estimates to approximate higher-order updates."
+        },
+        {
+          "id": "q3",
+          "type": "mcq",
+          "question_text": "DPM-Solver++ improves stability mainly by:",
+          "code_snippet": null,
+          "options": [
+            "A) Solving the SDE with Euler-Maruyama",
+            "B) Using high-order ODE solvers on the probability flow ODE",
+            "C) Increasing beta_t near t=0",
+            "D) Dropping classifier-free guidance"
+          ],
+          "correct_option": "B",
+          "explanation": "It treats sampling as integrating the probability flow ODE with high-order methods."
+        },
+        {
+          "id": "q4",
+          "type": "mcq",
+          "question_text": "Heun’s method is:",
+          "code_snippet": null,
+          "options": [
+            "A) First-order explicit Euler",
+            "B) Second-order predictor-corrector method",
+            "C) Implicit backward Euler",
+            "D) A Runge-Kutta 4 variant requiring four evaluations"
+          ],
+          "correct_option": "B",
+          "explanation": "Heun uses a predictor then corrector average, giving second-order accuracy."
+        },
+        {
+          "id": "q5",
+          "type": "mcq",
+          "question_text": "Karras sigma schedules (for EDM) are shaped to:",
+          "code_snippet": null,
+          "options": [
+            "A) Keep alpha_bar linear",
+            "B) Space steps in log-sigma to balance error across noise levels",
+            "C) Make betas constant",
+            "D) Remove the need for guidance"
+          ],
+          "correct_option": "B",
+          "explanation": "Log-spaced sigmas equalize integration error across scales."
+        },
+        {
+          "id": "q6",
+          "type": "mcq",
+          "question_text": "Stochastic sampler with ancestral noise adds noise proportional to:",
+          "code_snippet": null,
+          "options": [
+            "A) sqrt(beta_t)",
+            "B) sqrt(eta^2 * (1 - alpha_bar_{t-1}) / (1 - alpha_bar_t))",
+            "C) alpha_bar_t",
+            "D) log SNR"
+          ],
+          "correct_option": "B",
+          "explanation": "Ancestral sampling injects noise scaled by eta and variance ratio."
+        },
+        {
+          "id": "q7",
+          "type": "mcq",
+          "question_text": "Probability flow ODE has diffusion term:",
+          "code_snippet": null,
+          "options": [
+            "A) g(t)",
+            "B) 0",
+            "C) sqrt(beta(t))",
+            "D) log alpha(t)"
+          ],
+          "correct_option": "B",
+          "explanation": "The probability flow ODE removes stochasticity; diffusion term is zero."
+        },
+        {
+          "id": "q8",
+          "type": "mcq",
+          "question_text": "Choosing fewer timesteps with a fixed beta schedule generally causes:",
+          "code_snippet": null,
+          "options": [
+            "A) Lower discretization error",
+            "B) Higher discretization error and potential quality drop",
+            "C) More KL terms in ELBO",
+            "D) No change in trajectory"
+          ],
+          "correct_option": "B",
+          "explanation": "Coarser discretization increases integration error unless compensated by solver choice."
+        },
+        {
+          "id": "q9",
+          "type": "mcq",
+          "question_text": "Classifier guidance at inference effectively modifies the score by:",
+          "code_snippet": null,
+          "options": [
+            "A) Adding gradient of log p(y|x_t)",
+            "B) Subtracting beta_t",
+            "C) Scaling x_t",
+            "D) Replacing eps with zeros"
+          ],
+          "correct_option": "A",
+          "explanation": "Guidance adds classifier log-prob gradient to the score/eps estimate."
+        },
+        {
+          "id": "q10",
+          "type": "mcq",
+          "question_text": "Adaptive step size controllers in diffusion solvers monitor:",
+          "code_snippet": null,
+          "options": [
+            "A) GPU temperature",
+            "B) Local truncation error estimates from embedded methods",
+            "C) Number of attention heads",
+            "D) Batch size"
+          ],
+          "correct_option": "B",
+          "explanation": "Embedded solvers estimate error to adapt step size."
+        },
+        {
+          "id": "q11",
+          "type": "mcq",
+          "question_text": "v-prediction with Euler sampling changes the update by:",
+          "code_snippet": null,
+          "options": [
+            "A) Using v to reconstruct eps before stepping",
+            "B) Changing beta schedule to cosine",
+            "C) Removing variance",
+            "D) Ignoring timestep embedding"
+          ],
+          "correct_option": "A",
+          "explanation": "v is converted to eps (or x0) as needed for the Euler step."
+        },
+        {
+          "id": "q12",
+          "type": "mcq",
+          "question_text": "Why does DDIM allow swapping to deterministic sampling mid-trajectory?",
+          "code_snippet": null,
+          "options": [
+            "A) Because noise schedule is fixed",
+            "B) Because eta controls additional noise; setting eta=0 stops stochasticity",
+            "C) Because model is linear",
+            "D) Because x0 is constant"
+          ],
+          "correct_option": "B",
+          "explanation": "Eta parameter interpolates between stochastic and deterministic updates."
+        },
+        {
+          "id": "q13",
+          "type": "mcq",
+          "question_text": "When mapping SDE to ODE sampling (probability flow), one trade-off is:",
+          "code_snippet": null,
+          "options": [
+            "A) ODE is always faster",
+            "B) ODE may lose stochastic exploration and can reduce diversity",
+            "C) ODE requires more noise",
+            "D) ODE eliminates model calls"
+          ],
+          "correct_option": "B",
+          "explanation": "Deterministic ODE path can collapse diversity compared to stochastic SDE."
+        },
+        {
+          "id": "q14",
+          "type": "mcq",
+          "question_text": "Why are noise schedules sometimes rescaled when using fewer inference steps than training steps?",
+          "code_snippet": null,
+          "options": [
+            "A) To match VAE scale",
+            "B) To preserve marginal alpha_bar distribution at selected timesteps",
+            "C) To reduce memory",
+            "D) To improve tokenizer speed"
+          ],
+          "correct_option": "B",
+          "explanation": "Rescaling picks timesteps so alpha_bar values align with training distribution."
+        },
+        {
+          "id": "q15",
+          "type": "mcq",
+          "question_text": "Ancestral sampling in DDPM changes variance of x_{t-1} by:",
+          "code_snippet": null,
+          "options": [
+            "A) Setting it to zero",
+            "B) Using beta_tilde_t instead of beta_t",
+            "C) Adding encoder-decoder noise",
+            "D) Dropping alpha_bar"
+          ],
+          "correct_option": "B",
+          "explanation": "Posterior variance beta_tilde_t adjusts variance for the reverse conditional."
+        },
+        {
+          "id": "q16",
+          "type": "mcq",
+          "question_text": "Solver order describes:",
+          "code_snippet": null,
+          "options": [
+            "A) The number of layers in UNet",
+            "B) The highest power of step size for which error is bounded",
+            "C) The SNR decay rate",
+            "D) The patch size"
+          ],
+          "correct_option": "B",
+          "explanation": "Order k means local truncation error is O(h^{k+1})."
+        },
+        {
+          "id": "q17",
+          "type": "mcq",
+          "question_text": "Stratified timestep selection (e.g., uniform in log SNR) aims to:",
+          "code_snippet": null,
+          "options": [
+            "A) Reduce model size",
+            "B) Distribute integration error evenly across noise levels",
+            "C) Force text alignment",
+            "D) Remove variance terms"
+          ],
+          "correct_option": "B",
+          "explanation": "Sampling timesteps in log SNR balances difficulty across the trajectory."
+        },
+        {
+          "id": "q18",
+          "type": "mcq",
+          "question_text": "Why might Euler ancestral produce grainier samples than Heun at equal step counts?",
+          "code_snippet": null,
+          "options": [
+            "A) It injects less noise",
+            "B) It is first order and accumulates more error per step",
+            "C) It ignores guidance",
+            "D) It uses wrong beta schedule"
+          ],
+          "correct_option": "B",
+          "explanation": "First-order solver accumulates larger discretization error causing artifacts."
+        },
+        {
+          "id": "q19",
+          "type": "mcq",
+          "question_text": "When using CFG with high guidance weight in few-step samplers, a common failure is:",
+          "code_snippet": null,
+          "options": [
+            "A) Color shifts only",
+            "B) Overshooting leading to blown-out or saturated images",
+            "C) Infinite loop",
+            "D) Increased diversity"
+          ],
+          "correct_option": "B",
+          "explanation": "Large w can amplify errors and saturate predictions, especially with coarse steps."
+        },
+        {
+          "id": "q20",
+          "type": "mcq",
+          "question_text": "Mapping discrete betas to continuous beta(t) for ODE/SDE solvers requires:",
+          "code_snippet": null,
+          "options": [
+            "A) Setting beta(t)=0",
+            "B) Interpolating or fitting a continuous schedule consistent with alpha_bar products",
+            "C) Ignoring alpha_bar",
+            "D) Training a new model"
+          ],
+          "correct_option": "B",
+          "explanation": "Continuous solvers need continuous beta(t); interpolate from discrete training schedule."
+        }
+      ]
+    },
+    {
+      "section_id": "B",
+      "section_title": "Logic & Implementation Puzzles",
+      "total_questions": 20,
+      "marking_scheme": { "correct": 2.0, "incorrect": -0.5 },
+      "questions": [
+        {
+          "id": "q21",
+          "type": "parsons_problem",
+          "question_text": "Arrange deterministic DDIM step (eta=0) computing x0 then x_{t-1}.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "alpha_prev = alpha_bar[t-1]" },
+            { "id": "b2", "text": "x0 = (x_t - sqrt_one_minus_alpha_bar[t] * eps) / torch.sqrt(alpha_bar[t])" },
+            { "id": "b3", "text": "return torch.sqrt(alpha_prev) * x0 + torch.sqrt(1 - alpha_prev) * eps" },
+            { "id": "b4", "text": "def ddim_step(x_t, t, eps, alpha_bar, sqrt_one_minus_alpha_bar):" }
+          ],
+          "correct_order": ["b4", "b1", "b2", "b3"],
+          "explanation": "Predict x0 and map to previous timestep deterministically."
+        },
+        {
+          "id": "q22",
+          "type": "parsons_problem",
+          "question_text": "Arrange Euler ancestral update with stochastic noise.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "sigma = eta * torch.sqrt((1 - alpha_prev)/(1 - alpha_bar[t])) * torch.sqrt(1 - alpha_bar[t]/alpha_prev)" },
+            { "id": "b2", "text": "noise = torch.randn_like(x_t)" },
+            { "id": "b3", "text": "x_prev = mean + sigma * noise" },
+            { "id": "b4", "text": "mean = torch.sqrt(alpha_prev/alpha_bar[t]) * (x_t - torch.sqrt(1 - alpha_bar[t]) * eps)" },
+            { "id": "b5", "text": "def euler_ancestral(x_t, eps, alpha_bar, alpha_prev, eta):" }
+          ],
+          "correct_order": ["b5", "b1", "b2", "b4", "b3"],
+          "explanation": "Compute sigma, sample noise, compute mean, add noise."
+        },
+        {
+          "id": "q23",
+          "type": "parsons_problem",
+          "question_text": "Arrange to compute log-SNR from sigma schedule.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "return -torch.log(sigma**2)" },
+            { "id": "b2", "text": "def log_snr_from_sigma(sigma):" }
+          ],
+          "correct_order": ["b2", "b1"],
+          "explanation": "For EDM parameterization, log-SNR = -log(sigma^2) when data variance is 1."
+        },
+        {
+          "id": "q24",
+          "type": "parsons_problem",
+          "question_text": "Arrange Heun step for probability flow ODE.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "k1 = f(x_t, t)" },
+            { "id": "b2", "text": "x_pred = x_t + h * k1" },
+            { "id": "b3", "text": "k2 = f(x_pred, t + h)" },
+            { "id": "b4", "text": "return x_t + 0.5 * h * (k1 + k2)" },
+            { "id": "b5", "text": "def heun_step(x_t, t, h, f):" }
+          ],
+          "correct_order": ["b5", "b1", "b2", "b3", "b4"],
+          "explanation": "Predictor-corrector averaging slopes."
+        },
+        {
+          "id": "q25",
+          "type": "parsons_problem",
+          "question_text": "Arrange to convert v-prediction to eps.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "eps = (v + torch.sqrt(1 - alpha_t) * x0) / alpha_t" },
+            { "id": "b2", "text": "def v_to_eps(v, x0, alpha_t):" },
+            { "id": "b3", "text": "return eps" }
+          ],
+          "correct_order": ["b2", "b1", "b3"],
+          "explanation": "Rearrange v = alpha_t eps - sqrt(1 - alpha_t) x0."
+        },
+        {
+          "id": "q26",
+          "type": "parsons_problem",
+          "question_text": "Arrange to pick timesteps uniformly in log SNR.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "u = torch.rand(batch, device=alpha_bar.device)" },
+            { "id": "b2", "text": "log_snr = log_snr_min + u * (log_snr_max - log_snr_min)" },
+            { "id": "b3", "text": "return log_snr" },
+            { "id": "b4", "text": "def sample_log_snr(batch, log_snr_min, log_snr_max, alpha_bar):" }
+          ],
+          "correct_order": ["b4", "b1", "b2", "b3"],
+          "explanation": "Uniform in log SNR balances noise levels."
+        },
+        {
+          "id": "q27",
+          "type": "parsons_problem",
+          "question_text": "Arrange PLMS multistep combination from previous eps predictions.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "eps_hat = (55*e0 - 59*e1 + 37*e2 - 9*e3) / 24" },
+            { "id": "b2", "text": "return eps_hat" },
+            { "id": "b3", "text": "def plms_eps(e0, e1, e2, e3):" }
+          ],
+          "correct_order": ["b3", "b1", "b2"],
+          "explanation": "Four-step Adams-Bashforth coefficients form PLMS estimate."
+        },
+        {
+          "id": "q28",
+          "type": "parsons_problem",
+          "question_text": "Arrange to compute alpha_bar from a continuous beta(t) via integral approximation.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "alpha_bar = torch.exp(-torch.cumsum(beta_t, dim=0) * dt)" },
+            { "id": "b2", "text": "def alpha_bar_from_beta(beta_t, dt):" },
+            { "id": "b3", "text": "return alpha_bar" }
+          ],
+          "correct_order": ["b2", "b1", "b3"],
+          "explanation": "Integral of beta/1 approximated by cumulative sum times dt."
+        },
+        {
+          "id": "q29",
+          "type": "parsons_problem",
+          "question_text": "Arrange to perform a single probability flow ODE step using eps prediction.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "score = -eps / torch.sqrt(1 - alpha_bar[t])" },
+            { "id": "b2", "text": "dx = (0.5 * beta_t * x_t - beta_t * score) * h" },
+            { "id": "b3", "text": "return x_t + dx" },
+            { "id": "b4", "text": "def pf_ode_step(x_t, eps, beta_t, alpha_bar, t, h):" }
+          ],
+          "correct_order": ["b4", "b1", "b2", "b3"],
+          "explanation": "Probability flow ODE drift uses score; no diffusion term."
+        },
+        {
+          "id": "q30",
+          "type": "parsons_problem",
+          "question_text": "Arrange to clamp guidance weight to avoid explosion.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "w = torch.clamp(w, 0.0, w_max)" },
+            { "id": "b2", "text": "def safe_guidance_weight(w, w_max=5.0):" },
+            { "id": "b3", "text": "return w" }
+          ],
+          "correct_order": ["b2", "b1", "b3"],
+          "explanation": "Clipping guidance weight prevents overshoot at few steps."
+        },
+        {
+          "id": "q31",
+          "type": "fill_in_blank",
+          "question_text": "Heun’s method is a ______-order solver.",
+          "correct_answer": "second",
+          "explanation": "Predictor-corrector yields second-order accuracy."
+        },
+        {
+          "id": "q32",
+          "type": "fill_in_blank",
+          "question_text": "Probability flow ODE removes the ______ term from the SDE.",
+          "correct_answer": "diffusion",
+          "explanation": "ODE has zero diffusion; deterministic path."
+        },
+        {
+          "id": "q33",
+          "type": "fill_in_blank",
+          "question_text": "PLMS reuses the last ______ eps predictions.",
+          "correct_answer": "four",
+          "explanation": "A four-step multistep scheme."
+        },
+        {
+          "id": "q34",
+          "type": "fill_in_blank",
+          "question_text": "DDIM stochasticity is controlled by parameter ______.",
+          "correct_answer": "eta",
+          "explanation": "Eta scales additional noise."
+        },
+        {
+          "id": "q35",
+          "type": "fill_in_blank",
+          "question_text": "Karras schedules space steps approximately uniformly in ______.",
+          "correct_answer": "log sigma",
+          "explanation": "Uniform in log noise level."
+        },
+        {
+          "id": "q36",
+          "type": "fill_in_blank",
+          "question_text": "Solver order k implies local truncation error O(h^{______}).",
+          "correct_answer": "k+1",
+          "explanation": "One order higher than global error."
+        },
+        {
+          "id": "q37",
+          "type": "fill_in_blank",
+          "question_text": "Guidance adds gradient of log p(y|x_t) to the model’s ______.",
+          "correct_answer": "score / noise prediction",
+          "explanation": "Classifier guidance shifts the score."
+        },
+        {
+          "id": "q38",
+          "type": "fill_in_blank",
+          "question_text": "Reducing step count without solver change generally ______ discretization error.",
+          "correct_answer": "increases",
+          "explanation": "Coarser steps raise error."
+        },
+        {
+          "id": "q39",
+          "type": "fill_in_blank",
+          "question_text": "v-prediction target is v = alpha_t * eps - sqrt(1 - alpha_t) * ______.",
+          "correct_answer": "x0",
+          "explanation": "Mix of noise and signal."
+        },
+        {
+          "id": "q40",
+          "type": "fill_in_blank",
+          "question_text": "Euler ancestral is a ______-order method.",
+          "correct_answer": "first",
+          "explanation": "Forward Euler with noise."
+        }
+      ]
+    },
+    {
+      "section_id": "C",
+      "section_title": "Deep Theory & Coding",
+      "total_questions": 10,
+      "marking_scheme": { "correct": 4.0, "incorrect": -1.0 },
+      "questions": [
+        {
+          "id": "q41",
+          "type": "theory_open_ended",
+          "question_text": "Derive the probability flow ODE from the forward SDE and explain how it preserves marginals while removing stochasticity. Discuss implications for diversity.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Show drift f - 0.5 g^2 score, diffusion 0",
+              "Explain same marginal distributions as SDE",
+              "Deterministic path reduces sample diversity",
+              "Link to ODE solvers used in practice"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q42",
+          "type": "theory_open_ended",
+          "question_text": "Compare DDPM ancestral sampling, DDIM deterministic sampling, and DPM-Solver++ in terms of discretization error, speed, and diversity.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "DDPM stochastic, first order; DDIM deterministic, same marginals if eta tuned",
+              "DPM-Solver++ higher-order ODE, fewer steps for similar quality",
+              "Diversity vs fidelity trade-offs",
+              "Discuss step count vs error accumulation"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q43",
+          "type": "theory_open_ended",
+          "question_text": "Explain why timestep rescheduling (e.g., log SNR spacing) is needed when reducing inference steps and how it interacts with noise prediction networks trained on dense steps.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Mismatch of alpha_bar if naive subsampling",
+              "Rescheduling aligns SNR exposure",
+              "Model generalization across timesteps depends on embedding",
+              "Impact on error and stability"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q44",
+          "type": "theory_open_ended",
+          "question_text": "Describe PLMS and how Adams-Bashforth coefficients arise. When would PLMS be preferred over Heun or Euler?",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Multistep method using previous eps predictions",
+              "Coefficients from Adams-Bashforth 4",
+              "Higher order without extra model calls per step after warmup",
+              "Suited when past eps available and compute budget fixed"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q45",
+          "type": "theory_open_ended",
+          "question_text": "Analyze guidance strength effects on stability for few-step samplers. Propose safeguards to prevent saturation or collapse.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "High w amplifies errors; few steps magnify overshoot",
+              "Clipping w, dynamic thresholding, noise offset",
+              "Lower w at early steps, ramp later",
+              "Empirical indicators of collapse (blown highlights, lost detail)"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q46",
+          "type": "theory_open_ended",
+          "question_text": "Discuss advantages and drawbacks of stochastic vs deterministic samplers for downstream tasks (e.g., editing vs one-shot generation).",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Stochastic gives diversity; deterministic reproducibility",
+              "Editing may favor deterministic for alignment",
+              "Exploration vs consistency trade-off",
+              "Impact on evaluation metrics and user control"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q47",
+          "type": "theory_open_ended",
+          "question_text": "Derive how to map discrete beta_t schedule to continuous beta(t) and alpha_bar(t); explain assumptions in the interpolation.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Alpha_bar discrete = product(1 - beta_t); continuous alpha_bar = exp(-integral beta dt)",
+              "Piecewise constant or linear interpolation",
+              "Assume small dt; monotonic beta",
+              "Effect on solver accuracy"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q48",
+          "type": "theory_open_ended",
+          "question_text": "Explain why high-order solvers like DPM-Solver++ reduce step count without large quality loss. Discuss local vs global error accumulation.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Higher order reduces local truncation error",
+              "Fewer steps accumulate less total error",
+              "Requires accurate score estimates; sensitive to noise",
+              "Comparison to first-order Euler/ancestral"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q49",
+          "type": "theory_open_ended",
+          "question_text": "Propose an adaptive step-size controller for diffusion sampling and discuss how to bound error without exploding compute.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Embedded methods to estimate local error",
+              "Adjust h based on tolerance",
+              "Clamp min/max step counts",
+              "Balance accuracy vs model calls"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q50",
+          "type": "theory_open_ended",
+          "question_text": "Contrast probability flow ODE sampling with ancestral SDE sampling for likelihood estimation and sample diversity.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "ODE enables exact change-of-variables log-likelihood via PF-ODE integration",
+              "SDE stochasticity gives diversity",
+              "Trade-off between tractable likelihood and variety",
+              "Implications for downstream use cases"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        }
+      ]
+    }
+  ]
+}

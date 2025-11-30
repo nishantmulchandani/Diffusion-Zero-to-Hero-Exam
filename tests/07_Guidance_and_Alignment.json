@@ -1,0 +1,661 @@
+{
+  "module_name": "09_Guidance_and_Alignment",
+  "difficulty_level": "Hard",
+  "rendering_note": "Math tokens appear as plain text (e.g., alpha_bar_t, sqrt(beta(t)), mu, sigma^2). Render them with LaTeX/KaTeX/MathJax in the frontend.",
+  "sections": [
+    {
+      "section_id": "A",
+      "section_title": "Conceptual Recall (MCQs)",
+      "total_questions": 20,
+      "marking_scheme": { "correct": 2.0, "incorrect": -0.5 },
+      "questions": [
+        {
+          "id": "q1",
+          "type": "mcq",
+          "question_text": "Classifier guidance requires:",
+          "code_snippet": null,
+          "options": [
+            "A) A separate classifier trained on noisy latents",
+            "B) Removing text encoder",
+            "C) Zero betas",
+            "D) VAE retraining"
+          ],
+          "correct_option": "A",
+          "explanation": "Classifier guidance adds score from classifier log p(y|x_t)."
+        },
+        {
+          "id": "q2",
+          "type": "mcq",
+          "question_text": "Classifier-free guidance avoids classifier training by:",
+          "code_snippet": null,
+          "options": [
+            "A) Dropping labels",
+            "B) Training the same model with and without conditions via dropout",
+            "C) Using extra noise channels",
+            "D) Changing beta schedule"
+          ],
+          "correct_option": "B",
+          "explanation": "Token/control dropout learns conditional and unconditional branches jointly."
+        },
+        {
+          "id": "q3",
+          "type": "mcq",
+          "question_text": "Guidance scale w > 1 typically:",
+          "code_snippet": null,
+          "options": [
+            "A) Increases diversity",
+            "B) Improves adherence but can reduce diversity and cause saturation",
+            "C) Eliminates noise",
+            "D) Removes need for UNet"
+          ],
+          "correct_option": "B",
+          "explanation": "Higher w pushes toward condition but reduces variation and may overshoot."
+        },
+        {
+          "id": "q4",
+          "type": "mcq",
+          "question_text": "Negative prompts adjust CFG by:",
+          "code_snippet": null,
+          "options": [
+            "A) Changing betas",
+            "B) Setting unconditional branch to negative text",
+            "C) Dropping VAE",
+            "D) Using PLMS only"
+          ],
+          "correct_option": "B",
+          "explanation": "Negative text is used as the unconditional input."
+        },
+        {
+          "id": "q5",
+          "type": "mcq",
+          "question_text": "One risk of classifier guidance is:",
+          "code_snippet": null,
+          "options": [
+            "A) Too few model calls",
+            "B) Need for noisy classifier; miscalibration can hurt sample quality",
+            "C) Removing timestep embeddings",
+            "D) Eliminating VAE encoder"
+          ],
+          "correct_option": "B",
+          "explanation": "Classifier must be trained on noisy inputs; misalignment harms denoising."
+        },
+        {
+          "id": "q6",
+          "type": "mcq",
+          "question_text": "Prompt editing (replace/add tokens mid-sampling) relies on:",
+          "code_snippet": null,
+          "options": [
+            "A) Changing beta schedule",
+            "B) Updating conditional embeddings during sampling",
+            "C) Reinitializing weights",
+            "D) VAE retrain"
+          ],
+          "correct_option": "B",
+          "explanation": "Embeddings are swapped or blended across steps."
+        },
+        {
+          "id": "q7",
+          "type": "mcq",
+          "question_text": "Why might guidance be annealed over timesteps?",
+          "code_snippet": null,
+          "options": [
+            "A) Noise grows",
+            "B) Early steps benefit from stronger condition; late steps need fine detail without overshoot",
+            "C) Reduce GPU usage",
+            "D) Replace UNet"
+          ],
+          "correct_option": "B",
+          "explanation": "Schedule w to balance structure vs detail."
+        },
+        {
+          "id": "q8",
+          "type": "mcq",
+          "question_text": "Safety guidance (NSFW filter) can be implemented as:",
+          "code_snippet": null,
+          "options": [
+            "A) Random noise",
+            "B) Negative gradient from safety classifier to steer away from unsafe directions",
+            "C) Larger betas",
+            "D) Removing attention"
+          ],
+          "correct_option": "B",
+          "explanation": "Safety model provides gradient to avoid unsafe regions."
+        },
+        {
+          "id": "q9",
+          "type": "mcq",
+          "question_text": "Prompt-to-prompt uses cross-attention control to:",
+          "code_snippet": null,
+          "options": [
+            "A) Drop CFG",
+            "B) Keep attention maps aligned while editing text tokens",
+            "C) Change beta schedule",
+            "D) Remove VAE"
+          ],
+          "correct_option": "B",
+          "explanation": "Attention maps are reused/locked to preserve layout."
+        },
+        {
+          "id": "q10",
+          "type": "mcq",
+          "question_text": "High negative guidance magnitude can lead to:",
+          "code_snippet": null,
+          "options": [
+            "A) Better quality always",
+            "B) Unstable samples, mushy or distorted outputs",
+            "C) Faster sampling",
+            "D) Lower VRAM"
+          ],
+          "correct_option": "B",
+          "explanation": "Too strong negative pull can destabilize denoising."
+        },
+        {
+          "id": "q11",
+          "type": "mcq",
+          "question_text": "Guidance weight affects:",
+          "code_snippet": null,
+          "options": [
+            "A) VAE latent scale",
+            "B) Effective score magnitude added to unconditional branch",
+            "C) Beta schedule length",
+            "D) Number of channels"
+          ],
+          "correct_option": "B",
+          "explanation": "w scales the difference between conditional and unconditional predictions."
+        },
+        {
+          "id": "q12",
+          "type": "mcq",
+          "question_text": "Textual inversion can be combined with CFG by:",
+          "code_snippet": null,
+          "options": [
+            "A) Removing CFG",
+            "B) Using learned token embeddings within the conditional branch",
+            "C) Changing SNR weighting",
+            "D) Training a new UNet"
+          ],
+          "correct_option": "B",
+          "explanation": "Learned tokens expand vocabulary inside conditional path."
+        },
+        {
+          "id": "q13",
+          "type": "mcq",
+          "question_text": "Guidance-free sampling (w=0) corresponds to:",
+          "code_snippet": null,
+          "options": [
+            "A) Classifier guidance",
+            "B) Unconditional sampling",
+            "C) Infinite guidance",
+            "D) Safety filter"
+          ],
+          "correct_option": "B",
+          "explanation": "w=0 uses unconditional prediction only."
+        },
+        {
+          "id": "q14",
+          "type": "mcq",
+          "question_text": "One benefit of classifier-free over classifier guidance is:",
+          "code_snippet": null,
+          "options": [
+            "A) No need to train noisy classifier",
+            "B) Higher VRAM",
+            "C) More model calls",
+            "D) Requires labeled data"
+          ],
+          "correct_option": "A",
+          "explanation": "CFG uses same model; no separate classifier needed."
+        },
+        {
+          "id": "q15",
+          "type": "mcq",
+          "question_text": "Prompt weight scaling (e.g., emphasis tokens) effectively:",
+          "code_snippet": null,
+          "options": [
+            "A) Changes beta schedule",
+            "B) Scales token embeddings before cross-attention",
+            "C) Reduces number of steps",
+            "D) Removes guidance"
+          ],
+          "correct_option": "B",
+          "explanation": "Emphasis multiplies embeddings to alter attention strength."
+        },
+        {
+          "id": "q16",
+          "type": "mcq",
+          "question_text": "Embedding mixing across timesteps (e.g., blend old/new prompt) is used to:",
+          "code_snippet": null,
+          "options": [
+            "A) Fix VAE",
+            "B) Preserve layout while editing semantics",
+            "C) Remove CFG",
+            "D) Double channels"
+          ],
+          "correct_option": "B",
+          "explanation": "Gradual blend keeps structure from earlier attention maps."
+        },
+        {
+          "id": "q17",
+          "type": "mcq",
+          "question_text": "Too high CFG in very few steps can cause:",
+          "code_snippet": null,
+          "options": [
+            "A) More diversity",
+            "B) Posterization or clipped outputs",
+            "C) Lower SNR",
+            "D) Faster convergence without issues"
+          ],
+          "correct_option": "B",
+          "explanation": "Overshoot leads to artifacts and clipping."
+        },
+        {
+          "id": "q18",
+          "type": "mcq",
+          "question_text": "Guidance can be applied in v-pred models by:",
+          "code_snippet": null,
+          "options": [
+            "A) Ignoring v",
+            "B) Converting v to eps/x0 for both branches, then combining and mapping back",
+            "C) Training new betas",
+            "D) Using only unconditional branch"
+          ],
+          "correct_option": "B",
+          "explanation": "Guidance is applied on consistent prediction space (eps or x0)."
+        },
+        {
+          "id": "q19",
+          "type": "mcq",
+          "question_text": "Safety guidance weight selection should balance:",
+          "code_snippet": null,
+          "options": [
+            "A) GPU vs CPU usage",
+            "B) Avoiding unsafe content while not destroying prompt fidelity",
+            "C) Patch size",
+            "D) VAE latent variance"
+          ],
+          "correct_option": "B",
+          "explanation": "Too strong safety gradient can derail intended content."
+        },
+        {
+          "id": "q20",
+          "type": "mcq",
+          "question_text": "Prompt token length beyond encoder max:",
+          "code_snippet": null,
+          "options": [
+            "A) Increases model capacity",
+            "B) Is truncated or chunked; missing tokens reduce conditioning",
+            "C) Changes beta schedule",
+            "D) Forces unconditional sampling"
+          ],
+          "correct_option": "B",
+          "explanation": "Tokens past max length are typically dropped; guidance weakens."
+        }
+      ]
+    },
+    {
+      "section_id": "B",
+      "section_title": "Logic & Implementation Puzzles",
+      "total_questions": 20,
+      "marking_scheme": { "correct": 2.0, "incorrect": -0.5 },
+      "questions": [
+        {
+          "id": "q21",
+          "type": "parsons_problem",
+          "question_text": "Arrange classifier guidance score addition.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "score_cls = torch.autograd.grad(logp.sum(), x_t, retain_graph=True)[0]" },
+            { "id": "b2", "text": "score = score_model(x_t, t)" },
+            { "id": "b3", "text": "return score + w * score_cls" },
+            { "id": "b4", "text": "def guided_score(score_model, classifier, x_t, t, w):" },
+            { "id": "b5", "text": "x_t.requires_grad_(True); logp = classifier(x_t, t)" }
+          ],
+          "correct_order": ["b4", "b5", "b1", "b2", "b3"],
+          "explanation": "Backprop classifier logprob to get score, then add to model score."
+        },
+        {
+          "id": "q22",
+          "type": "parsons_problem",
+          "question_text": "Arrange CFG with v-pred outputs by converting to eps.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "eps_u = v_to_eps(v_u, x0_u, alpha_t)" },
+            { "id": "b2", "text": "eps_c = v_to_eps(v_c, x0_c, alpha_t)" },
+            { "id": "b3", "text": "eps = eps_u + w * (eps_c - eps_u)" },
+            { "id": "b4", "text": "def cfg_vpred(v_u, v_c, x0_u, x0_c, alpha_t, w):" },
+            { "id": "b5", "text": "return eps" }
+          ],
+          "correct_order": ["b4", "b1", "b2", "b3", "b5"],
+          "explanation": "Bring both predictions to eps space, apply CFG."
+        },
+        {
+          "id": "q23",
+          "type": "parsons_problem",
+          "question_text": "Arrange prompt editing: swap conditional embeddings after step k.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "if t <= k: cond = emb_old" },
+            { "id": "b2", "text": "else: cond = emb_new" },
+            { "id": "b3", "text": "return cond" },
+            { "id": "b4", "text": "def swap_prompt(emb_old, emb_new, t, k):" }
+          ],
+          "correct_order": ["b4", "b1", "b2", "b3"],
+          "explanation": "Use old prompt early, new prompt later."
+        },
+        {
+          "id": "q24",
+          "type": "parsons_problem",
+          "question_text": "Arrange to clamp guidance weight schedule.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "w_t = w_min + (w_max - w_min) * schedule(t/T)" },
+            { "id": "b2", "text": "return torch.clamp(w_t, 0, w_cap)" },
+            { "id": "b3", "text": "def guidance_schedule(t, T, schedule, w_min, w_max, w_cap):" }
+          ],
+          "correct_order": ["b3", "b1", "b2"],
+          "explanation": "Compute scheduled w and clamp."
+        },
+        {
+          "id": "q25",
+          "type": "parsons_problem",
+          "question_text": "Arrange to compute negative prompt embeddings.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "tokens = tokenizer(neg_text, return_tensors='pt', max_length=77, padding='max_length')" },
+            { "id": "b2", "text": "emb = text_encoder(tokens.input_ids)" },
+            { "id": "b3", "text": "return emb" },
+            { "id": "b4", "text": "def encode_negative(text_encoder, tokenizer, neg_text):" }
+          ],
+          "correct_order": ["b4", "b1", "b2", "b3"],
+          "explanation": "Tokenize negative prompt, encode to embeddings."
+        },
+        {
+          "id": "q26",
+          "type": "parsons_problem",
+          "question_text": "Arrange to scale token embeddings for emphasis.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "emb[:, idx] = emb[:, idx] * weight" },
+            { "id": "b2", "text": "return emb" },
+            { "id": "b3", "text": "def scale_token(emb, idx, weight):" }
+          ],
+          "correct_order": ["b3", "b1", "b2"],
+          "explanation": "Multiply selected token embedding."
+        },
+        {
+          "id": "q27",
+          "type": "parsons_problem",
+          "question_text": "Arrange to blend old and new prompt embeddings by ratio r.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "emb = r * emb_new + (1 - r) * emb_old" },
+            { "id": "b2", "text": "return emb" },
+            { "id": "b3", "text": "def blend_prompts(emb_old, emb_new, r):" }
+          ],
+          "correct_order": ["b3", "b1", "b2"],
+          "explanation": "Linear blend controls semantic shift."
+        },
+        {
+          "id": "q28",
+          "type": "parsons_problem",
+          "question_text": "Arrange to get safety gradient from classifier.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "logp = safety_model(x_t, t)" },
+            { "id": "b2", "text": "grad = torch.autograd.grad(logp.sum(), x_t)[0]" },
+            { "id": "b3", "text": "return grad" },
+            { "id": "b4", "text": "def safety_grad(safety_model, x_t, t):" }
+          ],
+          "correct_order": ["b4", "b1", "b2", "b3"],
+          "explanation": "Backprop safety score to get gradient."
+        },
+        {
+          "id": "q29",
+          "type": "parsons_problem",
+          "question_text": "Arrange to drop conditioning tokens with probability p (CFG training).",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "mask = torch.rand(batch) < p" },
+            { "id": "b2", "text": "tokens[mask] = null_id" },
+            { "id": "b3", "text": "return tokens" },
+            { "id": "b4", "text": "def drop_tokens(tokens, p, null_id):" }
+          ],
+          "correct_order": ["b4", "b1", "b2", "b3"],
+          "explanation": "Replace some rows with null tokens."
+        },
+        {
+          "id": "q30",
+          "type": "parsons_problem",
+          "question_text": "Arrange to compute CFG noise and apply to sampler update.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "eps = eps_u + w * (eps_c - eps_u)" },
+            { "id": "b2", "text": "x_prev = step_fn(x_t, eps, t)" },
+            { "id": "b3", "text": "return x_prev" },
+            { "id": "b4", "text": "def cfg_step(model, x_t, t, cond, w, step_fn):" },
+            { "id": "b5", "text": "eps_u = model(x_t, t, None); eps_c = model(x_t, t, cond)" }
+          ],
+          "correct_order": ["b4", "b5", "b1", "b2", "b3"],
+          "explanation": "Compute eps with CFG, then sampler step."
+        },
+        {
+          "id": "q31",
+          "type": "fill_in_blank",
+          "question_text": "Classifier guidance adds gradient of log p(y|x_t) to the model’s ______.",
+          "correct_answer": "score",
+          "explanation": "Guidance shifts the score."
+        },
+        {
+          "id": "q32",
+          "type": "fill_in_blank",
+          "question_text": "Classifier-free guidance uses ______ dropout to learn unconditional behavior.",
+          "correct_answer": "condition/token",
+          "explanation": "Drop tokens to get unconditional branch."
+        },
+        {
+          "id": "q33",
+          "type": "fill_in_blank",
+          "question_text": "Negative prompts are fed to the ______ branch in CFG.",
+          "correct_answer": "unconditional",
+          "explanation": "Use negative text as unconditional input."
+        },
+        {
+          "id": "q34",
+          "type": "fill_in_blank",
+          "question_text": "Guidance scale w controls fidelity vs ______.",
+          "correct_answer": "diversity",
+          "explanation": "Higher w reduces diversity."
+        },
+        {
+          "id": "q35",
+          "type": "fill_in_blank",
+          "question_text": "Prompt editing often reuses cross-attention ______ to preserve layout.",
+          "correct_answer": "maps",
+          "explanation": "Attention maps are locked or blended."
+        },
+        {
+          "id": "q36",
+          "type": "fill_in_blank",
+          "question_text": "Safety guidance can push samples away from unsafe regions using a safety ______.",
+          "correct_answer": "classifier",
+          "explanation": "Classifier gradient steers generation."
+        },
+        {
+          "id": "q37",
+          "type": "fill_in_blank",
+          "question_text": "Too high w in few steps can cause ______ outputs.",
+          "correct_answer": "saturated/overexposed",
+          "explanation": "Overshoot leads to saturation."
+        },
+        {
+          "id": "q38",
+          "type": "fill_in_blank",
+          "question_text": "Text encoders truncate prompts beyond max token length, weakening ______.",
+          "correct_answer": "conditioning",
+          "explanation": "Dropped tokens reduce conditioning."
+        },
+        {
+          "id": "q39",
+          "type": "fill_in_blank",
+          "question_text": "Emphasis tokens effectively scale ______ embeddings.",
+          "correct_answer": "token",
+          "explanation": "Multiply selected embeddings."
+        },
+        {
+          "id": "q40",
+          "type": "fill_in_blank",
+          "question_text": "Guidance annealing can be stronger early, weaker late to balance structure and ______.",
+          "correct_answer": "detail",
+          "explanation": "Late steps refine details with lower guidance."
+        }
+      ]
+    },
+    {
+      "section_id": "C",
+      "section_title": "Deep Theory & Coding",
+      "total_questions": 10,
+      "marking_scheme": { "correct": 4.0, "incorrect": -1.0 },
+      "questions": [
+        {
+          "id": "q41",
+          "type": "theory_open_ended",
+          "question_text": "Derive classifier guidance from Bayes rule and show how its gradient with respect to x_t modifies the diffusion score. Discuss calibration issues.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "log p(x_t|y) = log p(y|x_t) + log p(x_t) - log p(y)",
+              "Score adds grad log p(y|x_t) to base score",
+              "Classifier must be trained on noisy x_t; calibration matters",
+              "Effects on quality/diversity"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q42",
+          "type": "theory_open_ended",
+          "question_text": "Explain why classifier-free guidance is robust to classifier miscalibration. Include how conditional dropout creates the unconditional branch.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Same model predicts both branches; no extra classifier",
+              "Drop tokens/control to simulate unconditional",
+              "Reduces dependency on external calibration",
+              "Trade-offs: extra forward pass, still risk overshoot at high w"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q43",
+          "type": "theory_open_ended",
+          "question_text": "Discuss strategies for guidance scheduling across timesteps and how they affect structure vs detail in outputs.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Higher w early preserves structure, lower w later for detail",
+              "Possible schedules: linear, cosine, piecewise",
+              "Effect on saturation/overshoot",
+              "Empirical tuning for few-step vs many-step samplers"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q44",
+          "type": "theory_open_ended",
+          "question_text": "Analyze prompt editing (prompt-to-prompt) via cross-attention map reuse. Why does it preserve layout and what are its limitations?",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Attention maps encode spatial alignment; reusing preserves layout",
+              "Changing tokens while keeping maps holds structure",
+              "Limitations: large semantic shifts break maps; timing of swap matters",
+              "May reduce diversity if overconstrained"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q45",
+          "type": "theory_open_ended",
+          "question_text": "Compare safety guidance vs filtering after generation. Discuss effectiveness, compute, and user control.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Guidance steers generation away from unsafe content",
+              "Filtering discards after the fact; may waste compute",
+              "Guidance may affect fidelity; filter preserves fidelity but may block outputs",
+              "User control and transparency considerations"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q46",
+          "type": "theory_open_ended",
+          "question_text": "Explain how negative prompts influence CFG vector direction and why extremely high negative weights can destabilize sampling.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "CFG vector = eps_c - eps_neg; negative prompt defines direction",
+              "High w exaggerates difference, causing overshoot",
+              "Few-step samplers are sensitive; may saturate or collapse",
+              "Need clipping/thresholding to stabilize"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q47",
+          "type": "theory_open_ended",
+          "question_text": "Propose a method to blend two prompts over time to morph one concept to another, discussing embedding interpolation and guidance scheduling.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Interpolate embeddings across timesteps",
+              "Optionally reuse attention maps for layout",
+              "Schedule w to maintain stability",
+              "Discuss effect on diversity and alignment"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q48",
+          "type": "theory_open_ended",
+          "question_text": "Discuss how guidance interacts with v-prediction targets and why conversion consistency matters.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "v must be mapped to eps/x0 for guidance",
+              "Mixing inconsistent spaces causes errors",
+              "v has more uniform scale; guidance should respect that",
+              "Implementation pitfalls when mixing targets"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q49",
+          "type": "theory_open_ended",
+          "question_text": "Design an experiment to measure diversity vs fidelity as guidance weight varies for a fixed sampler.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Fix seeds, vary w",
+              "Metrics: CLIP score/fidelity, LPIPS/diversity",
+              "Plot trade-off curves",
+              "Control for sampler steps and prompts"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q50",
+          "type": "theory_open_ended",
+          "question_text": "Explain token length truncation effects on guidance and how to mitigate with chunking or custom encoders.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Max length (e.g., 77) truncates prompts; lost tokens weaken conditioning",
+              "Chunk prompts and run multiple passes or use longer encoders",
+              "Concatenate embeddings carefully to avoid mismatch",
+              "Impact on CFG strength"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        }
+      ]
+    }
+  ]
+}

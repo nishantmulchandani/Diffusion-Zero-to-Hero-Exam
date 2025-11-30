@@ -1,0 +1,667 @@
+{
+  "module_name": "11_Evaluation_and_Metrics",
+  "difficulty_level": "Hard",
+  "rendering_note": "Math tokens appear as plain text (e.g., alpha_bar_t, sqrt(beta(t)), mu, sigma^2). Render them with LaTeX/KaTeX/MathJax in the frontend.",
+  "sections": [
+    {
+      "section_id": "A",
+      "section_title": "Conceptual Recall (MCQs)",
+      "total_questions": 20,
+      "marking_scheme": { "correct": 2.0, "incorrect": -0.5 },
+      "questions": [
+        {
+          "id": "q1",
+          "type": "mcq",
+          "question_text": "FID measures:",
+          "code_snippet": null,
+          "options": [
+            "A) Pixel-wise MSE",
+            "B) 2-Wasserstein distance between Gaussian-fitted feature distributions",
+            "C) Token length",
+            "D) Time to sample"
+          ],
+          "correct_option": "B",
+          "explanation": "FID uses means/covariances of Inception features."
+        },
+        {
+          "id": "q2",
+          "type": "mcq",
+          "question_text": "KID differs from FID because:",
+          "code_snippet": null,
+          "options": [
+            "A) It uses pixel space",
+            "B) It is unbiased polynomial MMD estimator, not Gaussian assumption",
+            "C) It is supervised",
+            "D) It ignores covariance"
+          ],
+          "correct_option": "B",
+          "explanation": "KID uses MMD with polynomial kernel; unbiased finite-sample."
+        },
+        {
+          "id": "q3",
+          "type": "mcq",
+          "question_text": "CLIP score commonly measures:",
+          "code_snippet": null,
+          "options": [
+            "A) Structural similarity",
+            "B) Text-image alignment via cosine similarity of CLIP embeddings",
+            "C) VAE reconstruction",
+            "D) Noise schedule quality"
+          ],
+          "correct_option": "B",
+          "explanation": "CLIP encodes text and image; cosine similarity indicates alignment."
+        },
+        {
+          "id": "q4",
+          "type": "mcq",
+          "question_text": "Precision/Recall for generative models evaluate:",
+          "code_snippet": null,
+          "options": [
+            "A) Token count",
+            "B) Fidelity (precision) vs coverage/diversity (recall)",
+            "C) FPS",
+            "D) SNR"
+          ],
+          "correct_option": "B",
+          "explanation": "Precision reflects quality, recall reflects mode coverage."
+        },
+        {
+          "id": "q5",
+          "type": "mcq",
+          "question_text": "LPIPS is:",
+          "code_snippet": null,
+          "options": [
+            "A) A pixel metric",
+            "B) Learned perceptual image patch similarity using deep features",
+            "C) Noise schedule",
+            "D) Tokenizer"
+          ],
+          "correct_option": "B",
+          "explanation": "LPIPS compares features from pretrained networks."
+        },
+        {
+          "id": "q6",
+          "type": "mcq",
+          "question_text": "Measuring diversity with identical prompts across seeds primarily tests:",
+          "code_snippet": null,
+          "options": [
+            "A) Text encoder speed",
+            "B) Stochastic variation and mode coverage",
+            "C) VAE reconstruction",
+            "D) Beta schedule"
+          ],
+          "correct_option": "B",
+          "explanation": "Multiple seeds show diversity given same conditioning."
+        },
+        {
+          "id": "q7",
+          "type": "mcq",
+          "question_text": "Perceptual quality for super-resolution diffusion is often measured with:",
+          "code_snippet": null,
+          "options": [
+            "A) BLEU",
+            "B) PSNR/SSIM and LPIPS",
+            "C) FID only",
+            "D) Edit distance"
+          ],
+          "correct_option": "B",
+          "explanation": "SR tasks use distortion (PSNR/SSIM) and perceptual (LPIPS) metrics."
+        },
+        {
+          "id": "q8",
+          "type": "mcq",
+          "question_text": "User studies are important because:",
+          "code_snippet": null,
+          "options": [
+            "A) Metrics perfectly capture human preference",
+            "B) Automated metrics may not align with subjective quality",
+            "C) They reduce compute",
+            "D) They set beta"
+          ],
+          "correct_option": "B",
+          "explanation": "Human judgments can differ from metrics."
+        },
+        {
+          "id": "q9",
+          "type": "mcq",
+          "question_text": "Timing throughput is typically reported in:",
+          "code_snippet": null,
+          "options": [
+            "A) Tokens/sec",
+            "B) Samples/sec or steps/sec on given hardware/precision",
+            "C) Betas/sec",
+            "D) FLOPs"
+          ],
+          "correct_option": "B",
+          "explanation": "Throughput numbers include hardware and precision."
+        },
+        {
+          "id": "q10",
+          "type": "mcq",
+          "question_text": "For text-to-image, evaluating alignment to attributes (e.g., red cat) can use:",
+          "code_snippet": null,
+          "options": [
+            "A) BLEU",
+            "B) Automatic attribute classifiers or CLIP-based scoring",
+            "C) PSNR",
+            "D) MSE"
+          ],
+          "correct_option": "B",
+          "explanation": "Attribute classifiers or CLIP similarity measure alignment."
+        },
+        {
+          "id": "q11",
+          "type": "mcq",
+          "question_text": "When using FID, feature extractor choice matters because:",
+          "code_snippet": null,
+          "options": [
+            "A) Different backbones change feature distributions",
+            "B) It affects beta schedule",
+            "C) It changes batch size",
+            "D) It alters tokenization"
+          ],
+          "correct_option": "A",
+          "explanation": "FID is not absolute; feature backbone defines feature space."
+        },
+        {
+          "id": "q12",
+          "type": "mcq",
+          "question_text": "FID sensitivity increases when:",
+          "code_snippet": null,
+          "options": [
+            "A) Using few samples",
+            "B) Using many samples",
+            "C) Using infinite batch",
+            "D) Using text-only"
+          ],
+          "correct_option": "A",
+          "explanation": "Few samples make FID estimates noisy and biased."
+        },
+        {
+          "id": "q13",
+          "type": "mcq",
+          "question_text": "A/B tests with pairwise comparisons often use:",
+          "code_snippet": null,
+          "options": [
+            "A) Elo/Bradley-Terry or Thurstone models to aggregate preferences",
+            "B) Token length scoring",
+            "C) PSNR",
+            "D) Beta histograms"
+          ],
+          "correct_option": "A",
+          "explanation": "Preference aggregation models convert pairwise votes to scores."
+        },
+        {
+          "id": "q14",
+          "type": "mcq",
+          "question_text": "For video diffusion, temporal consistency metrics can include:",
+          "code_snippet": null,
+          "options": [
+            "A) FID only",
+            "B) Optical-flow-based warping error or temporal LPIPS",
+            "C) Token count",
+            "D) PSNR only"
+          ],
+          "correct_option": "B",
+          "explanation": "Temporal metrics compare frames with flow or temporal perceptual metrics."
+        },
+        {
+          "id": "q15",
+          "type": "mcq",
+          "question_text": "Fréchet Audio Distance (FAD) is analogous to:",
+          "code_snippet": null,
+          "options": [
+            "A) KID",
+            "B) FID but on audio embeddings",
+            "C) PSNR",
+            "D) CLIP score"
+          ],
+          "correct_option": "B",
+          "explanation": "FAD uses embeddings (e.g., VGGish) to compute Fréchet distance."
+        },
+        {
+          "id": "q16",
+          "type": "mcq",
+          "question_text": "Likelihood estimation via PF-ODE requires:",
+          "code_snippet": null,
+          "options": [
+            "A) No integration",
+            "B) Solving change-of-variables integral along ODE path",
+            "C) Random prompts",
+            "D) PSNR"
+          ],
+          "correct_option": "B",
+          "explanation": "Probability flow ODE enables exact likelihood via divergence integration."
+        },
+        {
+          "id": "q17",
+          "type": "mcq",
+          "question_text": "Measuring mode collapse can use:",
+          "code_snippet": null,
+          "options": [
+            "A) Only FID",
+            "B) Precision high but recall low indicating missing modes",
+            "C) PSNR",
+            "D) Token length"
+          ],
+          "correct_option": "B",
+          "explanation": "Low recall with decent precision suggests mode collapse."
+        },
+        {
+          "id": "q18",
+          "type": "mcq",
+          "question_text": "Runtime memory benchmarking should specify:",
+          "code_snippet": null,
+          "options": [
+            "A) Only batch size",
+            "B) Precision, batch, resolution, model, sampler steps",
+            "C) Token length",
+            "D) Beta"
+          ],
+          "correct_option": "B",
+          "explanation": "Memory depends on these factors."
+        },
+        {
+          "id": "q19",
+          "type": "mcq",
+          "question_text": "Per-prompt CLIP score variance across seeds indicates:",
+          "code_snippet": null,
+          "options": [
+            "A) Determinism",
+            "B) Diversity and stability of alignment",
+            "C) Beta schedule",
+            "D) VAE quality"
+          ],
+          "correct_option": "B",
+          "explanation": "Variance shows how stable alignment is across samples."
+        },
+        {
+          "id": "q20",
+          "type": "mcq",
+          "question_text": "Open-set safety evaluation should include:",
+          "code_snippet": null,
+          "options": [
+            "A) Only FID",
+            "B) Prompt sweeps with safety classifier/heuristics and manual review",
+            "C) Token length",
+            "D) PSNR"
+          ],
+          "correct_option": "B",
+          "explanation": "Safety tests involve diverse prompts and automated/manual checks."
+        }
+      ]
+    },
+    {
+      "section_id": "B",
+      "section_title": "Logic & Implementation Puzzles",
+      "total_questions": 20,
+      "marking_scheme": { "correct": 2.0, "incorrect": -0.5 },
+      "questions": [
+        {
+          "id": "q21",
+          "type": "parsons_problem",
+          "question_text": "Arrange FID computation skeleton.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "mu_r, sigma_r = feat_real.mean(0), torch.cov(feat_real.T)" },
+            { "id": "b2", "text": "mu_g, sigma_g = feat_fake.mean(0), torch.cov(feat_fake.T)" },
+            { "id": "b3", "text": "covmean = sqrtm(sigma_r @ sigma_g)" },
+            { "id": "b4", "text": "fid = ((mu_r - mu_g)**2).sum() + torch.trace(sigma_r + sigma_g - 2*covmean)" },
+            { "id": "b5", "text": "return fid.real" },
+            { "id": "b6", "text": "def compute_fid(feat_real, feat_fake):" }
+          ],
+          "correct_order": ["b6", "b1", "b2", "b3", "b4", "b5"],
+          "explanation": "FID uses mean/covariance and matrix square root."
+        },
+        {
+          "id": "q22",
+          "type": "parsons_problem",
+          "question_text": "Arrange CLIP score calculation.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "img_feat = clip.encode_image(imgs)" },
+            { "id": "b2", "text": "txt_feat = clip.encode_text(tokens)" },
+            { "id": "b3", "text": "score = F.cosine_similarity(img_feat, txt_feat)" },
+            { "id": "b4", "text": "def clip_score(clip, imgs, tokens):" },
+            { "id": "b5", "text": "return score" }
+          ],
+          "correct_order": ["b4", "b1", "b2", "b3", "b5"],
+          "explanation": "Cosine similarity in CLIP space."
+        },
+        {
+          "id": "q23",
+          "type": "parsons_problem",
+          "question_text": "Arrange polynomial MMD (KID) computation.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "k_xx = ((x @ x.T)/d + 1) ** 3" },
+            { "id": "b2", "text": "k_yy = ((y @ y.T)/d + 1) ** 3" },
+            { "id": "b3", "text": "k_xy = ((x @ y.T)/d + 1) ** 3" },
+            { "id": "b4", "text": "mmd = k_xx.mean() + k_yy.mean() - 2 * k_xy.mean()" },
+            { "id": "b5", "text": "def kid(x, y):" },
+            { "id": "b6", "text": "d = x.shape[1]" }
+          ],
+          "correct_order": ["b5", "b6", "b1", "b2", "b3", "b4"],
+          "explanation": "Polynomial kernel MMD."
+        },
+        {
+          "id": "q24",
+          "type": "parsons_problem",
+          "question_text": "Arrange PSNR computation.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "mse = F.mse_loss(x, y)" },
+            { "id": "b2", "text": "return 20 * torch.log10(max_val) - 10 * torch.log10(mse)" },
+            { "id": "b3", "text": "def psnr(x, y, max_val=1.0):" }
+          ],
+          "correct_order": ["b3", "b1", "b2"],
+          "explanation": "PSNR formula with max value."
+        },
+        {
+          "id": "q25",
+          "type": "parsons_problem",
+          "question_text": "Arrange temporal consistency metric using flow warp error.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "flow = flow_model(f0, f1)" },
+            { "id": "b2", "text": "warped = warp(f0, flow)" },
+            { "id": "b3", "text": "err = (warped - f1).abs().mean()" },
+            { "id": "b4", "text": "def warp_error(flow_model, warp, f0, f1):" },
+            { "id": "b5", "text": "return err" }
+          ],
+          "correct_order": ["b4", "b1", "b2", "b3", "b5"],
+          "explanation": "Warp previous frame and compare to next."
+        },
+        {
+          "id": "q26",
+          "type": "parsons_problem",
+          "question_text": "Arrange A/B preference aggregation via Bradley-Terry.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "logits = torch.tensor(scores)" },
+            { "id": "b2", "text": "loss = - (wins * logits - torch.log1p(torch.exp(logits)))" },
+            { "id": "b3", "text": "return loss.mean()" },
+            { "id": "b4", "text": "def bt_loss(scores, wins):" }
+          ],
+          "correct_order": ["b4", "b1", "b2", "b3"],
+          "explanation": "Binary preference log-likelihood."
+        },
+        {
+          "id": "q27",
+          "type": "parsons_problem",
+          "question_text": "Arrange to compute precision/recall features.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "feat_real = embed(real)" },
+            { "id": "b2", "text": "feat_fake = embed(fake)" },
+            { "id": "b3", "text": "return feat_real, feat_fake" },
+            { "id": "b4", "text": "def extract_feats(embed, real, fake):" }
+          ],
+          "correct_order": ["b4", "b1", "b2", "b3"],
+          "explanation": "Extract features for P/R estimation."
+        },
+        {
+          "id": "q28",
+          "type": "parsons_problem",
+          "question_text": "Arrange throughput measurement.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "t0 = time.time()" },
+            { "id": "b2", "text": "for _ in range(n): sampler()" },
+            { "id": "b3", "text": "t1 = time.time()" },
+            { "id": "b4", "text": "return n / (t1 - t0)" },
+            { "id": "b5", "text": "def samples_per_sec(sampler, n):" }
+          ],
+          "correct_order": ["b5", "b1", "b2", "b3", "b4"],
+          "explanation": "Timing loop to compute throughput."
+        },
+        {
+          "id": "q29",
+          "type": "parsons_problem",
+          "question_text": "Arrange to compute CLIP score variance across seeds.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "scores = []" },
+            { "id": "b2", "text": "scores.append(clip_score(clip, img, tokens))" },
+            { "id": "b3", "text": "return torch.stack(scores).var()" },
+            { "id": "b4", "text": "def score_var(clip, images, tokens):" }
+          ],
+          "correct_order": ["b4", "b1", "b2", "b3"],
+          "explanation": "Variance across samples indicates stability."
+        },
+        {
+          "id": "q30",
+          "type": "parsons_problem",
+          "question_text": "Arrange PF-ODE likelihood integration skeleton.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "logp = logp0" },
+            { "id": "b2", "text": "for i in range(T): logp += div_f(x[i], t[i]) * dt" },
+            { "id": "b3", "text": "return logp" },
+            { "id": "b4", "text": "def ode_likelihood(logp0, div_f, x, t, dt):" }
+          ],
+          "correct_order": ["b4", "b1", "b2", "b3"],
+          "explanation": "Integrate divergence along ODE path."
+        },
+        {
+          "id": "q31",
+          "type": "fill_in_blank",
+          "question_text": "FID fits Gaussians in a feature space (e.g., ______ network features).",
+          "correct_answer": "Inception",
+          "explanation": "Inception-V3 features commonly used."
+        },
+        {
+          "id": "q32",
+          "type": "fill_in_blank",
+          "question_text": "KID is an unbiased estimator of ______ with polynomial kernel.",
+          "correct_answer": "MMD",
+          "explanation": "KID uses MMD."
+        },
+        {
+          "id": "q33",
+          "type": "fill_in_blank",
+          "question_text": "CLIP score uses cosine similarity between text and image ______.",
+          "correct_answer": "embeddings",
+          "explanation": "CLIP produces embeddings."
+        },
+        {
+          "id": "q34",
+          "type": "fill_in_blank",
+          "question_text": "Precision measures fidelity; recall measures ______.",
+          "correct_answer": "coverage/diversity",
+          "explanation": "Recall reflects mode coverage."
+        },
+        {
+          "id": "q35",
+          "type": "fill_in_blank",
+          "question_text": "LPIPS compares deep ______ from pretrained networks.",
+          "correct_answer": "features",
+          "explanation": "Learned perceptual similarity."
+        },
+        {
+          "id": "q36",
+          "type": "fill_in_blank",
+          "question_text": "Few samples make FID estimates ______.",
+          "correct_answer": "noisy/biased",
+          "explanation": "Small sample bias."
+        },
+        {
+          "id": "q37",
+          "type": "fill_in_blank",
+          "question_text": "Preference aggregation can use Bradley-______ models.",
+          "correct_answer": "Terry",
+          "explanation": "Bradley-Terry for pairwise preferences."
+        },
+        {
+          "id": "q38",
+          "type": "fill_in_blank",
+          "question_text": "Video temporal consistency can be measured by flow-based ______ error.",
+          "correct_answer": "warping",
+          "explanation": "Warp error compares frames."
+        },
+        {
+          "id": "q39",
+          "type": "fill_in_blank",
+          "question_text": "Throughput is typically reported as samples per ______.",
+          "correct_answer": "second",
+          "explanation": "Samples/sec."
+        },
+        {
+          "id": "q40",
+          "type": "fill_in_blank",
+          "question_text": "Probability flow ODE enables exact ______ integration for likelihood.",
+          "correct_answer": "change-of-variables",
+          "explanation": "Integrate divergence along ODE."
+        }
+      ]
+    },
+    {
+      "section_id": "C",
+      "section_title": "Deep Theory & Coding",
+      "total_questions": 10,
+      "marking_scheme": { "correct": 4.0, "incorrect": -1.0 },
+      "questions": [
+        {
+          "id": "q41",
+          "type": "theory_open_ended",
+          "question_text": "Compare FID, KID, and CLIP score for text-to-image evaluation. Discuss what each measures and where they fail.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "FID: Gaussian assumption in feature space; sensitive to sample size",
+              "KID: unbiased MMD; similar intent but different bias/variance",
+              "CLIP: alignment, not fidelity; can be gamed by text-like artifacts",
+              "Failures: FID misses alignment, CLIP ignores realism"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q42",
+          "type": "theory_open_ended",
+          "question_text": "Explain precision/recall metrics for generative models and how they diagnose mode collapse vs noise.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Precision = fraction of samples near data manifold; recall = coverage of data manifold",
+              "High precision low recall -> mode collapse; high recall low precision -> noisy",
+              "Feature space choices, thresholds",
+              "Applicability to diffusion outputs"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q43",
+          "type": "theory_open_ended",
+          "question_text": "Describe how to evaluate temporal consistency in video diffusion models. Include metrics and qualitative protocols.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Use flow-based warp error, temporal LPIPS/SSIM",
+              "Check flicker manually or with metrics like tLPIPS",
+              "Keyframe consistency and motion smoothness",
+              "Qualitative side-by-side"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q44",
+          "type": "theory_open_ended",
+          "question_text": "Discuss sample size requirements for reliable FID/KID and how to interpret confidence intervals.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Few samples bias FID; thousands recommended",
+              "KID unbiased but variance matters",
+              "Bootstrapping for CI",
+              "Report sample count with metrics"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q45",
+          "type": "theory_open_ended",
+          "question_text": "Design an automated test suite for text-to-image: include prompts, metrics, and safety checks.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Prompt set with attributes, compositions, negatives",
+              "Metrics: CLIP score, FID/KID, diversity",
+              "Safety classifier sweeps",
+              "Reporting and reproducibility"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q46",
+          "type": "theory_open_ended",
+          "question_text": "Explain likelihood estimation via probability flow ODE and why it’s rarely used for high-res image evaluation.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "PF-ODE deterministic; change-of-variables integral",
+              "Requires divergence estimation; expensive",
+              "High-res latent dimension makes estimation hard",
+              "Not strongly correlated with perceptual quality"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q47",
+          "type": "theory_open_ended",
+          "question_text": "Propose a method to measure robustness to prompt rephrasings using CLIP-based metrics.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Generate multiple paraphrases per prompt",
+              "Compute CLIP scores for each; measure variance",
+              "Aggregate stability metrics",
+              "Possible human evaluation for validation"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q48",
+          "type": "theory_open_ended",
+          "question_text": "Discuss limitations of A/B preference testing and how to design fair comparisons for diffusion models.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Subjectivity, sample selection bias",
+              "Need randomization, balanced prompts",
+              "Elo/BT aggregation, confidence intervals",
+              "Viewer fatigue and UI effects"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q49",
+          "type": "theory_open_ended",
+          "question_text": "Explain why human evaluation remains necessary despite improved automatic metrics. Provide examples where metrics fail.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Metrics miss aesthetics, subtle semantics",
+              "CLIP can be gamed; FID misses alignment",
+              "Humans detect artifacts or intent mismatches",
+              "Examples: text rendering, compositional prompts"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q50",
+          "type": "theory_open_ended",
+          "question_text": "Compare evaluation needs for base models vs finetuned domain models (e.g., anime, medical).",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Domain-specific metrics/classifiers may be needed",
+              "Base metrics may not reflect domain fidelity",
+              "Safety/ethics differ by domain",
+              "Prompt sets tailored to domain content"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        }
+      ]
+    }
+  ]
+}

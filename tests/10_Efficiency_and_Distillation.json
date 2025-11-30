@@ -1,0 +1,664 @@
+{
+  "module_name": "12_Efficiency_and_Distillation",
+  "difficulty_level": "Hard",
+  "rendering_note": "Math tokens appear as plain text (e.g., alpha_bar_t, sqrt(beta(t)), mu, sigma^2). Render them with LaTeX/KaTeX/MathJax in the frontend.",
+  "sections": [
+    {
+      "section_id": "A",
+      "section_title": "Conceptual Recall (MCQs)",
+      "total_questions": 20,
+      "marking_scheme": { "correct": 2.0, "incorrect": -0.5 },
+      "questions": [
+        {
+          "id": "q1",
+          "type": "mcq",
+          "question_text": "Progressive distillation reduces sampling steps by:",
+          "code_snippet": null,
+          "options": [
+            "A) Increasing beta",
+            "B) Training student to match teacher trajectories with fewer steps",
+            "C) Removing UNet layers",
+            "D) Changing VAE scale"
+          ],
+          "correct_option": "B",
+          "explanation": "Student learns to emulate multiple teacher steps with one."
+        },
+        {
+          "id": "q2",
+          "type": "mcq",
+          "question_text": "Latent consistency models (LCMs) distill by:",
+          "code_snippet": null,
+          "options": [
+            "A) Predicting noise directly",
+            "B) Training on consistency loss between two adjacent steps using teacher noise",
+            "C) Removing CFG",
+            "D) VAE retrain"
+          ],
+          "correct_option": "B",
+          "explanation": "LCM enforces consistency between denoising steps to allow large jumps."
+        },
+        {
+          "id": "q3",
+          "type": "mcq",
+          "question_text": "Memory optimization via gradient checkpointing trades:",
+          "code_snippet": null,
+          "options": [
+            "A) More memory for less compute",
+            "B) Less memory for more recomputation",
+            "C) Larger batch for smaller model",
+            "D) No change"
+          ],
+          "correct_option": "B",
+          "explanation": "Checkpointing drops intermediates and recomputes in backward."
+        },
+        {
+          "id": "q4",
+          "type": "mcq",
+          "question_text": "Flash attention reduces cost by:",
+          "code_snippet": null,
+          "options": [
+            "A) Using bigger kernels",
+            "B) Tiling and fusing softmax to reduce memory traffic",
+            "C) Removing softmax",
+            "D) Lowering channels"
+          ],
+          "correct_option": "B",
+          "explanation": "Flash attention is IO-aware fused kernel."
+        },
+        {
+          "id": "q5",
+          "type": "mcq",
+          "question_text": "Quantization to INT8/FP8 can affect diffusion by:",
+          "code_snippet": null,
+          "options": [
+            "A) Making outputs identical",
+            "B) Introducing numerical error that may degrade quality if not calibrated",
+            "C) Changing beta schedule",
+            "D) Removing VAE"
+          ],
+          "correct_option": "B",
+          "explanation": "Quantization must be calibrated to avoid artifacts."
+        },
+        {
+          "id": "q6",
+          "type": "mcq",
+          "question_text": "ONNX/TensorRT export requires handling:",
+          "code_snippet": null,
+          "options": [
+            "A) Random seeds only",
+            "B) Static/dynamic shapes, custom ops (e.g., groupnorm), and supported precisions",
+            "C) Beta schedule",
+            "D) Tokenizer"
+          ],
+          "correct_option": "B",
+          "explanation": "Export must support shapes and ops on target runtime."
+        },
+        {
+          "id": "q7",
+          "type": "mcq",
+          "question_text": "LoRA rank selection impacts:",
+          "code_snippet": null,
+          "options": [
+            "A) Beta schedule",
+            "B) Adapter parameter count and capacity",
+            "C) VAE scale",
+            "D) Token length"
+          ],
+          "correct_option": "B",
+          "explanation": "Higher rank increases adapter capacity."
+        },
+        {
+          "id": "q8",
+          "type": "mcq",
+          "question_text": "Pruning channels in UNet can cause:",
+          "code_snippet": null,
+          "options": [
+            "A) Higher quality",
+            "B) Loss of capacity and potential quality drop",
+            "C) More VRAM",
+            "D) Lower FLOPs"
+          ],
+          "correct_option": "B",
+          "explanation": "Pruning reduces parameters; may hurt fidelity if overdone."
+        },
+        {
+          "id": "q9",
+          "type": "mcq",
+          "question_text": "CUDA graphs help by:",
+          "code_snippet": null,
+          "options": [
+            "A) Changing model weights",
+            "B) Capturing static execution to reduce launch overhead",
+            "C) Reducing latency of tokenization",
+            "D) Altering betas"
+          ],
+          "correct_option": "B",
+          "explanation": "Graphs reduce per-step launch overhead in inference."
+        },
+        {
+          "id": "q10",
+          "type": "mcq",
+          "question_text": "Xformers memory-efficient attention reduces usage by:",
+          "code_snippet": null,
+          "options": [
+            "A) Removing attention",
+            "B) Using block-sparse/fused kernels to lower memory footprint",
+            "C) Changing beta",
+            "D) Increasing batch size always"
+          ],
+          "correct_option": "B",
+          "explanation": "Memory-efficient kernels save activations."
+        },
+        {
+          "id": "q11",
+          "type": "mcq",
+          "question_text": "Teacher-student distillation for diffusion typically uses loss on:",
+          "code_snippet": null,
+          "options": [
+            "A) Beta schedule",
+            "B) Student noise prediction vs teacher noise at matched timesteps",
+            "C) VAE decoder weights",
+            "D) Tokenization speed"
+          ],
+          "correct_option": "B",
+          "explanation": "Student matches teacher eps or v predictions."
+        },
+        {
+          "id": "q12",
+          "type": "mcq",
+          "question_text": "Reducing sampler steps after distillation can:",
+          "code_snippet": null,
+          "options": [
+            "A) Keep quality if distillation succeeded; otherwise degrade",
+            "B) Always improve quality",
+            "C) Remove need for VAE",
+            "D) Break guidance"
+          ],
+          "correct_option": "A",
+          "explanation": "Quality depends on successful distillation."
+        },
+        {
+          "id": "q13",
+          "type": "mcq",
+          "question_text": "Practical batch size increase techniques include:",
+          "code_snippet": null,
+          "options": [
+            "A) Using CPU only",
+            "B) Gradient accumulation and mixed precision",
+            "C) Removing UNet",
+            "D) Shorter prompts"
+          ],
+          "correct_option": "B",
+          "explanation": "Accumulation and FP16/FP8 increase effective batch."
+        },
+        {
+          "id": "q14",
+          "type": "mcq",
+          "question_text": "Tokenizer/CLIP can be offloaded to CPU during inference to:",
+          "code_snippet": null,
+          "options": [
+            "A) Increase GPU memory for model",
+            "B) Speed up attention",
+            "C) Change betas",
+            "D) Improve VAE"
+          ],
+          "correct_option": "A",
+          "explanation": "Offload frees GPU VRAM at cost of latency."
+        },
+        {
+          "id": "q15",
+          "type": "mcq",
+          "question_text": "Quantization-aware training differs from post-training quantization by:",
+          "code_snippet": null,
+          "options": [
+            "A) Ignoring quantization",
+            "B) Simulating quantization during training to adapt weights",
+            "C) Changing beta schedule",
+            "D) Using more VRAM"
+          ],
+          "correct_option": "B",
+          "explanation": "QAT inserts fake quant ops during training."
+        },
+        {
+          "id": "q16",
+          "type": "mcq",
+          "question_text": "EMA swap for inference can improve:",
+          "code_snippet": null,
+          "options": [
+            "A) Sampling speed only",
+            "B) Sample quality via smoothed weights",
+            "C) Token length",
+            "D) Beta schedule"
+          ],
+          "correct_option": "B",
+          "explanation": "EMA weights are smoother, often better at test."
+        },
+        {
+          "id": "q17",
+          "type": "mcq",
+          "question_text": "Knowledge distillation loss can include:",
+          "code_snippet": null,
+          "options": [
+            "A) Only MSE on eps",
+            "B) MSE on eps plus feature matching or perceptual losses",
+            "C) Beta schedule",
+            "D) VAE retrain"
+          ],
+          "correct_option": "B",
+          "explanation": "Feature/perceptual terms can stabilize student."
+        },
+        {
+          "id": "q18",
+          "type": "mcq",
+          "question_text": "Reducing attention heads while keeping dimension constant impacts:",
+          "code_snippet": null,
+          "options": [
+            "A) FLOPs and potential capacity (less head diversity)",
+            "B) VAE",
+            "C) Beta",
+            "D) Tokenizer"
+          ],
+          "correct_option": "A",
+          "explanation": "Fewer heads reduce parameters and diversity."
+        },
+        {
+          "id": "q19",
+          "type": "mcq",
+          "question_text": "Distillation to a smaller latent size (higher downsample factor) risks:",
+          "code_snippet": null,
+          "options": [
+            "A) More detail",
+            "B) Loss of spatial detail and higher compression artifacts",
+            "C) Lower VRAM",
+            "D) Faster tokenizer"
+          ],
+          "correct_option": "B",
+          "explanation": "Smaller latents discard detail."
+        },
+        {
+          "id": "q20",
+          "type": "mcq",
+          "question_text": "Speedups from fused ops (e.g., fused SiLU/conv) come from:",
+          "code_snippet": null,
+          "options": [
+            "A) More parameters",
+            "B) Reduced memory reads/writes and kernel launches",
+            "C) Changing beta",
+            "D) VAE"
+          ],
+          "correct_option": "B",
+          "explanation": "Fusion lowers overhead."
+        }
+      ]
+    },
+    {
+      "section_id": "B",
+      "section_title": "Logic & Implementation Puzzles",
+      "total_questions": 20,
+      "marking_scheme": { "correct": 2.0, "incorrect": -0.5 },
+      "questions": [
+        {
+          "id": "q21",
+          "type": "parsons_problem",
+          "question_text": "Arrange simple teacher-student distillation step.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "eps_t = teacher(x_t, t, cond)" },
+            { "id": "b2", "text": "eps_s = student(x_t, t, cond)" },
+            { "id": "b3", "text": "loss = F.mse_loss(eps_s, eps_t.detach())" },
+            { "id": "b4", "text": "return loss" },
+            { "id": "b5", "text": "def distill_step(student, teacher, x_t, t, cond):" }
+          ],
+          "correct_order": ["b5", "b1", "b2", "b3", "b4"],
+          "explanation": "Student matches teacher noise prediction."
+        },
+        {
+          "id": "q22",
+          "type": "parsons_problem",
+          "question_text": "Arrange gradient checkpointing wrapper.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "def ckpt_fn(*args): return block(*args)" },
+            { "id": "b2", "text": "return checkpoint(ckpt_fn, *inputs)" },
+            { "id": "b3", "text": "def run_block(block, inputs):" }
+          ],
+          "correct_order": ["b3", "b1", "b2"],
+          "explanation": "Wrap block call in checkpoint."
+        },
+        {
+          "id": "q23",
+          "type": "parsons_problem",
+          "question_text": "Arrange progressive distillation loss over two steps into one.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "x_mid = teacher_step(x_t, t)" },
+            { "id": "b2", "text": "x_student = student_step(x_t, t)" },
+            { "id": "b3", "text": "loss = F.mse_loss(x_student, x_mid.detach())" },
+            { "id": "b4", "text": "return loss" },
+            { "id": "b5", "text": "def prog_distill(teacher_step, student_step, x_t, t):" }
+          ],
+          "correct_order": ["b5", "b1", "b2", "b3", "b4"],
+          "explanation": "Student mimics two teacher steps compressed into one."
+        },
+        {
+          "id": "q24",
+          "type": "parsons_problem",
+          "question_text": "Arrange to enable flash attention if available.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "try: import xformers; has_xf = True\nexcept ImportError: has_xf = False" },
+            { "id": "b2", "text": "if has_xf: model.enable_xformers_memory_efficient_attention()" },
+            { "id": "b3", "text": "def maybe_enable_xf(model):" },
+            { "id": "b4", "text": "return model" }
+          ],
+          "correct_order": ["b3", "b1", "b2", "b4"],
+          "explanation": "Check availability then enable."
+        },
+        {
+          "id": "q25",
+          "type": "parsons_problem",
+          "question_text": "Arrange to quantize a linear weight to int8 (schematic).",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "scale = weight.abs().max() / 127" },
+            { "id": "b2", "text": "q = torch.round(weight / scale).to(torch.int8)" },
+            { "id": "b3", "text": "return q, scale" },
+            { "id": "b4", "text": "def quantize_int8(weight):" }
+          ],
+          "correct_order": ["b4", "b1", "b2", "b3"],
+          "explanation": "Symmetric int8 quantization."
+        },
+        {
+          "id": "q26",
+          "type": "parsons_problem",
+          "question_text": "Arrange to capture a CUDA graph for sampler step.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "g = torch.cuda.CUDAGraph()" },
+            { "id": "b2", "text": "with torch.cuda.graph(g):\n    out = sampler()" },
+            { "id": "b3", "text": "return g, out" },
+            { "id": "b4", "text": "def capture_graph(sampler):" }
+          ],
+          "correct_order": ["b4", "b1", "b2", "b3"],
+          "explanation": "Graph capture for static execution."
+        },
+        {
+          "id": "q27",
+          "type": "parsons_problem",
+          "question_text": "Arrange LoRA module replacement for linear layer.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "lora = LoRA(linear, r, alpha)" },
+            { "id": "b2", "text": "model.replace_module(linear, lora)" },
+            { "id": "b3", "text": "return model" },
+            { "id": "b4", "text": "def add_lora(model, linear, r, alpha):" }
+          ],
+          "correct_order": ["b4", "b1", "b2", "b3"],
+          "explanation": "Wrap linear with LoRA adapter."
+        },
+        {
+          "id": "q28",
+          "type": "parsons_problem",
+          "question_text": "Arrange mixed precision autocast context.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "with torch.cuda.amp.autocast():\n    out = model(x)" },
+            { "id": "b2", "text": "return out" },
+            { "id": "b3", "text": "def forward_amp(model, x):" }
+          ],
+          "correct_order": ["b3", "b1", "b2"],
+          "explanation": "Use autocast for FP16."
+        },
+        {
+          "id": "q29",
+          "type": "parsons_problem",
+          "question_text": "Arrange to fuse SiLU and conv via a custom module.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "x = self.conv(x)" },
+            { "id": "b2", "text": "return x * torch.sigmoid(x)" },
+            { "id": "b3", "text": "def forward(self, x):" },
+            { "id": "b4", "text": "class FusedSiLUConv(nn.Module):" },
+            { "id": "b5", "text": "    def __init__(self, conv):\n        super().__init__(); self.conv = conv" }
+          ],
+          "correct_order": ["b4", "b5", "b3", "b1", "b2"],
+          "explanation": "Fuse conv and activation."
+        },
+        {
+          "id": "q30",
+          "type": "parsons_problem",
+          "question_text": "Arrange to offload text encoder to CPU during sampling.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "text_encoder.to('cpu')" },
+            { "id": "b2", "text": "tokens = tokenizer(prompt, return_tensors='pt').to('cpu')" },
+            { "id": "b3", "text": "emb = text_encoder(tokens.input_ids)" },
+            { "id": "b4", "text": "emb = emb.to('cuda')" },
+            { "id": "b5", "text": "return emb" },
+            { "id": "b6", "text": "def encode_cpu(text_encoder, tokenizer, prompt):" }
+          ],
+          "correct_order": ["b6", "b1", "b2", "b3", "b4", "b5"],
+          "explanation": "CPU encode then move embeddings to GPU."
+        },
+        {
+          "id": "q31",
+          "type": "fill_in_blank",
+          "question_text": "Progressive distillation trains a student to replace ______ teacher steps.",
+          "correct_answer": "multiple",
+          "explanation": "Compresses steps."
+        },
+        {
+          "id": "q32",
+          "type": "fill_in_blank",
+          "question_text": "Gradient checkpointing saves memory by trading extra ______.",
+          "correct_answer": "compute/recomputation",
+          "explanation": "Recompute activations on backward."
+        },
+        {
+          "id": "q33",
+          "type": "fill_in_blank",
+          "question_text": "Flash attention reduces ______ traffic.",
+          "correct_answer": "memory/IO",
+          "explanation": "IO-aware fused kernel."
+        },
+        {
+          "id": "q34",
+          "type": "fill_in_blank",
+          "question_text": "Quantization-aware training simulates ______ during training.",
+          "correct_answer": "quantization",
+          "explanation": "Fake quant ops."
+        },
+        {
+          "id": "q35",
+          "type": "fill_in_blank",
+          "question_text": "LoRA rank r controls adapter ______ and parameter count.",
+          "correct_answer": "capacity",
+          "explanation": "Higher r = more capacity."
+        },
+        {
+          "id": "q36",
+          "type": "fill_in_blank",
+          "question_text": "CUDA graphs reduce kernel launch ______.",
+          "correct_answer": "overhead",
+          "explanation": "Graphs pre-capture execution."
+        },
+        {
+          "id": "q37",
+          "type": "fill_in_blank",
+          "question_text": "Pruning channels may reduce ______ and capacity.",
+          "correct_answer": "FLOPs/parameters",
+          "explanation": "Pruning shrinks model."
+        },
+        {
+          "id": "q38",
+          "type": "fill_in_blank",
+          "question_text": "Distillation losses often target the model’s predicted ______.",
+          "correct_answer": "noise/eps (or v)",
+          "explanation": "Student matches teacher predictions."
+        },
+        {
+          "id": "q39",
+          "type": "fill_in_blank",
+          "question_text": "Mixed precision uses FP16/FP8 for compute while keeping optimizer states in ______.",
+          "correct_answer": "FP32",
+          "explanation": "States remain full precision."
+        },
+        {
+          "id": "q40",
+          "type": "fill_in_blank",
+          "question_text": "Fused ops reduce separate kernel ______ and memory writes.",
+          "correct_answer": "launches",
+          "explanation": "Fusion reduces overhead."
+        }
+      ]
+    },
+    {
+      "section_id": "C",
+      "section_title": "Deep Theory & Coding",
+      "total_questions": 10,
+      "marking_scheme": { "correct": 4.0, "incorrect": -1.0 },
+      "questions": [
+        {
+          "id": "q41",
+          "type": "theory_open_ended",
+          "question_text": "Explain progressive distillation for diffusion models, including how to generate student targets and how step count shrinks.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Teacher runs multiple steps; student learns single step mapping",
+              "Distillation loss on eps/x0 or intermediate x",
+              "Iterative halving of steps",
+              "Impact on quality vs speed"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q42",
+          "type": "theory_open_ended",
+          "question_text": "Compare latent consistency models vs standard DDIM distillation. What assumptions and limitations exist?",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "LCM uses consistency between adjacent steps",
+              "DDIM distillation matches deterministic trajectories",
+              "Assumes model smoothness; may fail for complex noise",
+              "Effect on diversity and guidance"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q43",
+          "type": "theory_open_ended",
+          "question_text": "Discuss memory-saving techniques (checkpointing, xformers, offloading) and their trade-offs for training large diffusion models.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Checkpointing: recompute cost vs memory",
+              "Xformers/flash attention reduce memory, sometimes speed up",
+              "Offloading (CPU/NVME) increases latency",
+              "Combine strategies cautiously"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q44",
+          "type": "theory_open_ended",
+          "question_text": "Explain how quantization affects diffusion sampling stability and outline calibration steps to minimize quality loss.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Reduced precision can amplify error in attention/normalization",
+              "Calibration: collect activation stats, per-channel scales",
+              "QAT vs PTQ comparison",
+              "Check metrics and visual artifacts post-quantization"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q45",
+          "type": "theory_open_ended",
+          "question_text": "Design a student-teacher distillation loss that combines noise MSE and perceptual feature loss. Justify weighting.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Noise MSE aligns denoising; feature loss aligns internal representations",
+              "Weighting to avoid overpowering perceptual term",
+              "Possible CLIP/LPIPS features",
+              "Discuss stability and speed"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q46",
+          "type": "theory_open_ended",
+          "question_text": "Compare LoRA finetuning vs full finetuning for efficiency and quality. Include VRAM, speed, and expressiveness.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "LoRA: parameter efficient, lower VRAM, limited capacity",
+              "Full finetune: higher capacity, more VRAM, risk of forgetting",
+              "Inference overhead small for LoRA",
+              "Use cases: domain adaptation vs base training"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q47",
+          "type": "theory_open_ended",
+          "question_text": "Explain how CUDA graphs improve inference latency and when they are unsuitable.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Graphs reduce kernel launch overhead for static shapes",
+              "Unsuitable for dynamic shapes/control flow",
+              "Requires warmup and fixed memory addresses",
+              "Benefits most in small batch/step loops"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q48",
+          "type": "theory_open_ended",
+          "question_text": "Propose a pruning strategy for diffusion UNet/DiT and discuss how to recover quality (e.g., fine-tuning).",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Magnitude/structured pruning of channels/heads",
+              "Fine-tune after pruning to recover",
+              "Monitor metrics for degradation",
+              "Trade-off between sparsity and quality"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q49",
+          "type": "theory_open_ended",
+          "question_text": "Discuss exporting diffusion models to ONNX/TensorRT: challenges with dynamic shapes, custom ops, and precision modes.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Need to handle variable timesteps/resolution",
+              "Custom ops (GroupNorm, attention) may need plugins",
+              "Precision (FP16/INT8) constraints",
+              "Graph partitioning and stability"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q50",
+          "type": "theory_open_ended",
+          "question_text": "Explain how to benchmark end-to-end latency for text-to-image diffusion, listing all components that must be timed.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Tokenization/text encoder, UNet sampling steps, VAE decode",
+              "Precision, batch, resolution, guidance weight",
+              "Warmup vs steady-state",
+              "Report hardware/software stack"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        }
+      ]
+    }
+  ]
+}
