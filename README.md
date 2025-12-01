@@ -1,6 +1,6 @@
 # Diffusion: Zero to Hero Exam Platform
 
-**Diffusion** is an advanced, AI-native examination platform designed specifically for Deep Learning Engineers to master the mathematics and implementation of Diffusion Models. This project aims to provide a rigorous testing environment suitable for PhD candidates and researchers.
+**Diffusion exam platform** is an advanced, AI-native examination platform designed specifically for Deep Learning Engineers to master the mathematics and implementation of Diffusion Models. This project aims to provide a rigorous testing environment suitable for PhD candidates and researchers.
 
 ## 🚀 Features
 
