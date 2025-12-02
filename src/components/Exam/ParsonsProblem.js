@@ -5,7 +5,8 @@ import {
     DndContext,
     closestCenter,
     KeyboardSensor,
-    PointerSensor,
+    MouseSensor,
+    TouchSensor,
     useSensor,
     useSensors,
     DragOverlay,
@@ -100,9 +101,15 @@ export default function ParsonsProblem({ question }) {
     const [activeId, setActiveId] = useState(null);
 
     const sensors = useSensors(
-        useSensor(PointerSensor, {
+        useSensor(MouseSensor, {
             activationConstraint: {
-                distance: 5, // Require slight movement to prevent accidental drags on click
+                distance: 10,
+            },
+        }),
+        useSensor(TouchSensor, {
+            activationConstraint: {
+                delay: 250,
+                tolerance: 5,
             },
         }),
         useSensor(KeyboardSensor, {
@@ -208,7 +215,8 @@ export default function ParsonsProblem({ question }) {
             <h3 className="text-lg font-semibold mb-4 text-zinc-900 dark:text-zinc-100">
                 <span className="mr-2 text-orange-600 dark:text-orange-400">Q{question.id.replace('q', '')}.</span>
                 <MathRenderer text={question.question_text} />
-                <span className="ml-2 text-xs font-normal text-zinc-500">(Drag blocks to Solution Area)</span>
+                <span className="ml-2 text-xs font-normal text-zinc-500 hidden sm:inline">(Drag blocks to Solution Area)</span>
+                <span className="ml-2 text-xs font-normal text-zinc-500 sm:hidden">(Hold to drag)</span>
             </h3>
 
             <DndContext
