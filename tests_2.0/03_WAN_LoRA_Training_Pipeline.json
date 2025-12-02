@@ -1,0 +1,664 @@
+{
+  "module_name": "03_WAN_LoRA_Training_Pipeline",
+  "difficulty_level": "Hard",
+  "rendering_note": "Math tokens appear as plain text (e.g., alpha_bar_t, sqrt(beta(t)), mu, sigma^2). Render them with LaTeX/KaTeX/MathJax in the frontend.",
+  "sections": [
+    {
+      "section_id": "A",
+      "section_title": "Conceptual Recall (MCQs)",
+      "total_questions": 20,
+      "marking_scheme": { "correct": 2.0, "incorrect": -0.5 },
+      "questions": [
+        {
+          "id": "q1",
+          "type": "mcq",
+          "question_text": "WAN training uses which target and loss?",
+          "code_snippet": null,
+          "options": [
+            "A) x0 MSE",
+            "B) Velocity (flow matching) MSE",
+            "C) Cross-entropy on text",
+            "D) GAN only"
+          ],
+          "correct_option": "B",
+          "explanation": "WAN DiT trains with velocity targets."
+        },
+        {
+          "id": "q2",
+          "type": "mcq",
+          "question_text": "For LoRA-only finetune on WAN, optimizer should include:",
+          "code_snippet": null,
+          "options": [
+            "A) All DiT params",
+            "B) Only LoRA (and any bias/norm if unfrozen), base frozen",
+            "C) VAE",
+            "D) Text encoder"
+          ],
+          "correct_option": "B",
+          "explanation": "Freeze base; train adapters."
+        },
+        {
+          "id": "q3",
+          "type": "mcq",
+          "question_text": "Learning rate range for WAN LoRA finetune is typically:",
+          "code_snippet": null,
+          "options": [
+            "A) 1e-2",
+            "B) 1e-4 to 5e-5 (or lower for stability)",
+            "C) 1.0",
+            "D) 1e-8"
+          ],
+          "correct_option": "B",
+          "explanation": "Small LR stabilizes adapter finetune."
+        },
+        {
+          "id": "q4",
+          "type": "mcq",
+          "question_text": "Gradient accumulation is necessary when:",
+          "code_snippet": null,
+          "options": [
+            "A) VRAM is abundant",
+            "B) Clip length/resolution exceed VRAM; simulate larger batch",
+            "C) Using CPU",
+            "D) Flow matching disabled"
+          ],
+          "correct_option": "B",
+          "explanation": "Accumulation helps with large sequences."
+        },
+        {
+          "id": "q5",
+          "type": "mcq",
+          "question_text": "WAN conditioning uses umT5 with:",
+          "code_snippet": null,
+          "options": [
+            "A) 77 tokens",
+            "B) 512 tokens and attention mask",
+            "C) 1024 tokens",
+            "D) No mask"
+          ],
+          "correct_option": "B",
+          "explanation": "512 tokens with masks."
+        },
+        {
+          "id": "q6",
+          "type": "mcq",
+          "question_text": "Timestep sampling during LoRA finetune should be:",
+          "code_snippet": null,
+          "options": [
+            "A) Fixed to mid t",
+            "B) Random across [0, T), optionally log-SNR weighted",
+            "C) Always t=0",
+            "D) Always t=T"
+          ],
+          "correct_option": "B",
+          "explanation": "Random t covers noise range."
+        },
+        {
+          "id": "q7",
+          "type": "mcq",
+          "question_text": "Targeting temporal motion requires training clips with:",
+          "code_snippet": null,
+          "options": [
+            "A) T=1",
+            "B) Sufficient frames (T>1) at consistent FPS",
+            "C) Only images",
+            "D) Random FPS mixing without resampling"
+          ],
+          "correct_option": "B",
+          "explanation": "Need multiple frames with normalized FPS."
+        },
+        {
+          "id": "q8",
+          "type": "mcq",
+          "question_text": "Aspect/size variation is best handled via:",
+          "code_snippet": null,
+          "options": [
+            "A) Ignoring mismatch",
+            "B) Aspect buckets with optional bucket embeddings",
+            "C) Stretching to square always",
+            "D) Cropping to 64x64"
+          ],
+          "correct_option": "B",
+          "explanation": "Buckets reduce padding and distortion."
+        },
+        {
+          "id": "q9",
+          "type": "mcq",
+          "question_text": "CFG training for LoRA uses:",
+          "code_snippet": null,
+          "options": [
+            "A) Two separate models",
+            "B) Token dropout (replace with null) so unconditional branch is learned",
+            "C) No text",
+            "D) VAE changes"
+          ],
+          "correct_option": "B",
+          "explanation": "Drop prompts to teach unconditional branch."
+        },
+        {
+          "id": "q10",
+          "type": "mcq",
+          "question_text": "Validation for motion/style LoRA should use:",
+          "code_snippet": null,
+          "options": [
+            "A) Random prompts each time",
+            "B) Fixed prompt/seed set, consistent T and resolution",
+            "C) No validation",
+            "D) Training captions only"
+          ],
+          "correct_option": "B",
+          "explanation": "Fixed validation allows tracking change."
+        },
+        {
+          "id": "q11",
+          "type": "mcq",
+          "question_text": "Mixed precision (bf16/FP16) plus AMP scaler is used to:",
+          "code_snippet": null,
+          "options": [
+            "A) Slow training",
+            "B) Reduce VRAM while managing overflow",
+            "C) Change token length",
+            "D) Replace EMA"
+          ],
+          "correct_option": "B",
+          "explanation": "AMP cuts memory but needs scaler."
+        },
+        {
+          "id": "q12",
+          "type": "mcq",
+          "question_text": "Effective batch size with accumulation =",
+          "code_snippet": null,
+          "options": [
+            "A) microbatch × accumulation steps",
+            "B) microbatch / accumulation",
+            "C) accumulation only",
+            "D) microbatch only"
+          ],
+          "correct_option": "A",
+          "explanation": "Accumulate grads before step."
+        },
+        {
+          "id": "q13",
+          "type": "mcq",
+          "question_text": "Loss reweighting by 1/SNR in WAN LoRA finetune:",
+          "code_snippet": null,
+          "options": [
+            "A) Emphasizes high-noise steps",
+            "B) Emphasizes low-noise steps",
+            "C) Has no effect",
+            "D) Changes tokenizer"
+          ],
+          "correct_option": "A",
+          "explanation": "Inverse SNR boosts noisy regions."
+        },
+        {
+          "id": "q14",
+          "type": "mcq",
+          "question_text": "WAN uses which curriculum baseline?",
+          "code_snippet": null,
+          "options": [
+            "A) Direct 720p only",
+            "B) 256px image pretrain, then 256→480→720 joint image+video",
+            "C) Text only",
+            "D) 4K only"
+          ],
+          "correct_option": "B",
+          "explanation": "Progressive resolution curriculum."
+        },
+        {
+          "id": "q15",
+          "type": "mcq",
+          "question_text": "Checkpointing for LoRA finetune should store:",
+          "code_snippet": null,
+          "options": [
+            "A) Only LoRA weights",
+            "B) LoRA weights, EMA, optimizer, scaler, and step",
+            "C) Only VAE",
+            "D) Nothing"
+          ],
+          "correct_option": "B",
+          "explanation": "Full state enables resume."
+        },
+        {
+          "id": "q16",
+          "type": "mcq",
+          "question_text": "WAN uses bf16/FP16 with:",
+          "code_snippet": null,
+          "options": [
+            "A) No sharding",
+            "B) FSDP + attn parallelism for DiT; DP for VAE",
+            "C) CPU only",
+            "D) Data parallel only for all"
+          ],
+          "correct_option": "B",
+          "explanation": "DiT uses FSDP + attn parallel; VAE is small -> DP."
+        },
+        {
+          "id": "q17",
+          "type": "mcq",
+          "question_text": "Microbatching clips means:",
+          "code_snippet": null,
+          "options": [
+            "A) Splitting T across ranks",
+            "B) Fewer samples per GPU, accumulate to reach target batch",
+            "C) Changing beta",
+            "D) Disabling CFG"
+          ],
+          "correct_option": "B",
+          "explanation": "Small microbatches with accumulation."
+        },
+        {
+          "id": "q18",
+          "type": "mcq",
+          "question_text": "Validation metrics for temporal consistency include:",
+          "code_snippet": null,
+          "options": [
+            "A) BLEU",
+            "B) Warp error / tLPIPS",
+            "C) PSNR only",
+            "D) Token length"
+          ],
+          "correct_option": "B",
+          "explanation": "Use temporal metrics."
+        },
+        {
+          "id": "q19",
+          "type": "mcq",
+          "question_text": "If LoRA finetune uses image-only data, motion learning will:",
+          "code_snippet": null,
+          "options": [
+            "A) Improve",
+            "B) Degenerate (no temporal signal)",
+            "C) Stay same",
+            "D) Increase T automatically"
+          ],
+          "correct_option": "B",
+          "explanation": "No motion info without T>1."
+        },
+        {
+          "id": "q20",
+          "type": "mcq",
+          "question_text": "WAN text encoder should be frozen during LoRA finetune to:",
+          "code_snippet": null,
+          "options": [
+            "A) Save VRAM and preserve alignment",
+            "B) Increase parameters",
+            "C) Change beta",
+            "D) Merge LoRA"
+          ],
+          "correct_option": "A",
+          "explanation": "Freeze text encoder to keep alignment and reduce memory."
+        }
+      ]
+    },
+    {
+      "section_id": "B",
+      "section_title": "Logic & Implementation Puzzles",
+      "total_questions": 20,
+      "marking_scheme": { "correct": 2.0, "incorrect": -0.5 },
+      "questions": [
+        {
+          "id": "q21",
+          "type": "parsons_problem",
+          "question_text": "Arrange core WAN LoRA training step (velocity target).",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "eps = torch.randn_like(x0)" },
+            { "id": "b2", "text": "t = torch.randint(0, T, (B,), device=x0.device)" },
+            { "id": "b3", "text": "x_t = q_sample_flow(x0, t, eps, alpha_bar)" },
+            { "id": "b4", "text": "v_pred = model(x_t, t, cond)" },
+            { "id": "b5", "text": "loss = F.mse_loss(v_pred, velocity_target(x0, x_t, t, eps))" },
+            { "id": "b6", "text": "def train_step(model, x0, cond, alpha_bar):" },
+            { "id": "b7", "text": "return loss" }
+          ],
+          "correct_order": ["b6", "b2", "b1", "b3", "b4", "b5", "b7"],
+          "explanation": "Sample t/eps, form x_t, predict v, MSE with velocity target."
+        },
+        {
+          "id": "q22",
+          "type": "parsons_problem",
+          "question_text": "Arrange tokenizer with CFG dropout for umT5.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "tok = tokenizer(texts, return_tensors='pt', padding='max_length', max_length=512, truncation=True)" },
+            { "id": "b2", "text": "mask = torch.rand(tok.input_ids.size(0)) < p" },
+            { "id": "b3", "text": "tok.input_ids[mask] = null_id" },
+            { "id": "b4", "text": "return tok" },
+            { "id": "b5", "text": "def tokenize_cfg(texts, tokenizer, p, null_id):" }
+          ],
+          "correct_order": ["b5", "b1", "b2", "b3", "b4"],
+          "explanation": "Drop to null prompt with prob p."
+        },
+        {
+          "id": "q23",
+          "type": "parsons_problem",
+          "question_text": "Arrange optimizer on LoRA params only.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "params = [p for n,p in model.named_parameters() if p.requires_grad]" },
+            { "id": "b2", "text": "return AdamW(params, lr=lr, weight_decay=wd)" },
+            { "id": "b3", "text": "def make_opt(model, lr, wd):" }
+          ],
+          "correct_order": ["b3", "b1", "b2"],
+          "explanation": "Filter to trainable (LoRA) params."
+        },
+        {
+          "id": "q24",
+          "type": "parsons_problem",
+          "question_text": "Arrange mixed precision step with accumulation and EMA.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "with autocast(): loss = train_step(model, x0, cond, alpha_bar) / accum" },
+            { "id": "b2", "text": "scaler.scale(loss).backward()" },
+            { "id": "b3", "text": "if (i+1)%accum==0:\n    scaler.step(opt); scaler.update(); opt.zero_grad(); ema_update(model, ema, decay)" },
+            { "id": "b4", "text": "def loop(loader, opt, scaler, ema, accum):" },
+            { "id": "b5", "text": "for i,(x0,cond) in enumerate(loader):" }
+          ],
+          "correct_order": ["b4", "b5", "b1", "b2", "b3"],
+          "explanation": "Autocast, scale/backward, accumulate, step+EMA."
+        },
+        {
+          "id": "q25",
+          "type": "parsons_problem",
+          "question_text": "Arrange FPS normalization of video clips.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "clip = resample_fps(clip, target_fps)" },
+            { "id": "b2", "text": "return clip" },
+            { "id": "b3", "text": "def normalize_fps(clip, target_fps):" }
+          ],
+          "correct_order": ["b3", "b1", "b2"],
+          "explanation": "Resample to consistent FPS."
+        },
+        {
+          "id": "q26",
+          "type": "parsons_problem",
+          "question_text": "Arrange aspect bucket assignment.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "r = H / W" },
+            { "id": "b2", "text": "idx = torch.argmin((ratios - r).abs())" },
+            { "id": "b3", "text": "return idx" },
+            { "id": "b4", "text": "def pick_bucket(H, W, ratios):" }
+          ],
+          "correct_order": ["b4", "b1", "b2", "b3"],
+          "explanation": "Choose nearest aspect bucket."
+        },
+        {
+          "id": "q27",
+          "type": "parsons_problem",
+          "question_text": "Arrange to compute inverse-SNR weight.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "snr = alpha_bar / (1 - alpha_bar)" },
+            { "id": "b2", "text": "w = 1 / snr" },
+            { "id": "b3", "text": "return w" },
+            { "id": "b4", "text": "def inv_snr(alpha_bar):" }
+          ],
+          "correct_order": ["b4", "b1", "b2", "b3"],
+          "explanation": "Inverse SNR weighting."
+        },
+        {
+          "id": "q28",
+          "type": "parsons_problem",
+          "question_text": "Arrange validation sampling with fixed seeds.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "torch.manual_seed(seed)" },
+            { "id": "b2", "text": "clips.append(sample_fn(prompt))" },
+            { "id": "b3", "text": "return clips" },
+            { "id": "b4", "text": "def val(prompts, seed, sample_fn):" },
+            { "id": "b5", "text": "clips = []" }
+          ],
+          "correct_order": ["b4", "b1", "b5", "b2", "b3"],
+          "explanation": "Deterministic validation."
+        },
+        {
+          "id": "q29",
+          "type": "parsons_problem",
+          "question_text": "Arrange checkpoint save for LoRA.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "torch.save({\"lora\": model.state_dict(), \"ema\": ema.state_dict(), \"opt\": opt.state_dict(), \"scaler\": scaler.state_dict(), \"step\": step}, path)" },
+            { "id": "b2", "text": "def save_ckpt(model, ema, opt, scaler, step, path):" },
+            { "id": "b3", "text": "return path" }
+          ],
+          "correct_order": ["b2", "b1", "b3"],
+          "explanation": "Save full state."
+        },
+        {
+          "id": "q30",
+          "type": "parsons_problem",
+          "question_text": "Arrange to ensure text encoder is frozen.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "for p in text_encoder.parameters(): p.requires_grad = False" },
+            { "id": "b2", "text": "return text_encoder" },
+            { "id": "b3", "text": "def freeze_text(text_encoder):" }
+          ],
+          "correct_order": ["b3", "b1", "b2"],
+          "explanation": "Freeze text encoder params."
+        },
+        {
+          "id": "q31",
+          "type": "fill_in_blank",
+          "question_text": "WAN LoRA finetune uses velocity ______ targets.",
+          "correct_answer": "flow-matching",
+          "explanation": "Flow matching velocity."
+        },
+        {
+          "id": "q32",
+          "type": "fill_in_blank",
+          "question_text": "Effective batch = microbatch × ______ steps.",
+          "correct_answer": "accumulation",
+          "explanation": "Accumulate grads."
+        },
+        {
+          "id": "q33",
+          "type": "fill_in_blank",
+          "question_text": "Token dropout trains the ______ branch for CFG.",
+          "correct_answer": "unconditional",
+          "explanation": "Null prompt branch."
+        },
+        {
+          "id": "q34",
+          "type": "fill_in_blank",
+          "question_text": "Aspect buckets reduce ______ padding.",
+          "correct_answer": "wasted",
+          "explanation": "Less padding."
+        },
+        {
+          "id": "q35",
+          "type": "fill_in_blank",
+          "question_text": "Validation should fix prompts and ______ for repeatability.",
+          "correct_answer": "seeds",
+          "explanation": "Determinism."
+        },
+        {
+          "id": "q36",
+          "type": "fill_in_blank",
+          "question_text": "Inverse SNR weighting upweights ______-noise steps.",
+          "correct_answer": "high",
+          "explanation": "Noisy steps."
+        },
+        {
+          "id": "q37",
+          "type": "fill_in_blank",
+          "question_text": "LoRA params only should have requires_grad set to ______.",
+          "correct_answer": "True",
+          "explanation": "Train adapters only."
+        },
+        {
+          "id": "q38",
+          "type": "fill_in_blank",
+          "question_text": "Consistent FPS prevents motion ______.",
+          "correct_answer": "jitter",
+          "explanation": "Normalize FPS."
+        },
+        {
+          "id": "q39",
+          "type": "fill_in_blank",
+          "question_text": "Save step number in checkpoint to resume ______ schedules.",
+          "correct_answer": "training/learning rate",
+          "explanation": "Resume schedules."
+        },
+        {
+          "id": "q40",
+          "type": "fill_in_blank",
+          "question_text": "Only LoRA parameters go into the ______ optimizer.",
+          "correct_answer": "AdamW",
+          "explanation": "Optimizer filtered."
+        }
+      ]
+    },
+    {
+      "section_id": "C",
+      "section_title": "Deep Theory & Coding",
+      "total_questions": 10,
+      "marking_scheme": { "correct": 4.0, "incorrect": -1.0 },
+      "questions": [
+        {
+          "id": "q41",
+          "type": "theory_open_ended",
+          "question_text": "Write a WAN LoRA training loop (pseudo-code): data load, FPS normalization, aspect bucketing, token dropout for CFG, timestep sampling, flow-matching velocity loss, AMP+accum, EMA, checkpointing.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Data prep (clip windows, FPS normalize, bucket resize)",
+              "Tokenize text with dropout to null",
+              "Sample t/eps, q_sample_flow, predict v, MSE",
+              "AMP/autocast, scaler, accumulation",
+              "EMA update, save ckpt with LoRA/opt/scaler/step"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q42",
+          "type": "theory_open_ended",
+          "question_text": "Propose hyperparameter ranges for WAN LoRA finetune under 24GB: LR, rank/alpha, batch/microbatch, accumulation, steps, dropout.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "LR ~1e-4–5e-5, modest rank/alpha",
+              "Microbatch small, accum to target batch",
+              "Step counts realistic, warmup optional",
+              "Adapter dropout for small data",
+              "VRAM considerations"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q43",
+          "type": "theory_open_ended",
+          "question_text": "Explain why LoRA finetune should keep text encoder and VAE frozen in WAN; relate to distribution alignment.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "VAE defines latent distribution; DiT trained on it",
+              "Text encoder alignment preserved by freezing",
+              "Changing them causes mismatch with DiT training",
+              "Adapters suffice for targeted changes"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q44",
+          "type": "theory_open_ended",
+          "question_text": "Discuss validation strategy for motion/style LoRA: fixed prompts/seeds, temporal metrics, visual strips, cadence vs cost.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Fixed prompt/seed set",
+              "Metrics: warp error, tLPIPS; visual grids",
+              "Validation frequency trade-off",
+              "Detect flicker/style drift"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q45",
+          "type": "theory_open_ended",
+          "question_text": "Explain 1/SNR loss weighting in flow matching and when to apply it during LoRA finetune.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "1/SNR upweights noisy steps",
+              "Balances gradients across t/log-SNR",
+              "Relevant for velocity targets too",
+              "Potential to adjust based on data"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q46",
+          "type": "theory_open_ended",
+          "question_text": "Describe how to handle variable aspect resolutions in WAN LoRA training (bucketing, resizing/padding, bucket embeddings).",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Assign buckets by aspect",
+              "Resize/pad to bucket sizes",
+              "Optional bucket id embedding added to t_emb",
+              "Benefits: efficiency and generalization"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q47",
+          "type": "theory_open_ended",
+          "question_text": "Propose a curriculum for finetune if data is limited: start with image+short clips at lower res, then longer/higher res; justify against WAN base pretraining.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Start low res/short T to stabilize",
+              "Progress to target res/T",
+              "Aligns with base model curriculum",
+              "VRAM and convergence considerations"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q48",
+          "type": "theory_open_ended",
+          "question_text": "Explain how to manage AMP overflow during LoRA training and why aggressive scaling can cause NaNs.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Monitor scaler, reduce if overflow",
+              "Lower LR, clip grads",
+              "Large scales cause overflow in matmuls",
+              "Keep stable mixed precision"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q49",
+          "type": "theory_open_ended",
+          "question_text": "Detail checkpoint contents and frequency for WAN LoRA runs to balance I/O and safety.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Store LoRA weights, EMA, optimizer, scaler, step",
+              "Frequency vs cost trade-off",
+              "Keep best + recent checkpoints",
+              "Naming/versioning"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q50",
+          "type": "theory_open_ended",
+          "question_text": "Discuss how to adapt WAN LoRA finetune pipeline for style vs motion targets: data selection, layer selection, validation prompts.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Style: include varied static scenes; target cross-attn/FFN; prompts focusing style",
+              "Motion: varied dynamics; target attention layers; temporal metrics",
+              "Validation tailored to goal"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        }
+      ]
+    }
+  ]
+}

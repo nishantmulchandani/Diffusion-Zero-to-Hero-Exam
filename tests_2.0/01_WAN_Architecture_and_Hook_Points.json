@@ -1,0 +1,662 @@
+{
+  "module_name": "01_WAN_Architecture_and_Hook_Points",
+  "difficulty_level": "Hard",
+  "rendering_note": "Math tokens appear as plain text (e.g., alpha_bar_t, sqrt(beta(t)), mu, sigma^2). Render them with LaTeX/KaTeX/MathJax in the frontend.",
+  "sections": [
+    {
+      "section_id": "A",
+      "section_title": "Conceptual Recall (MCQs)",
+      "total_questions": 20,
+      "marking_scheme": { "correct": 2.0, "incorrect": -0.5 },
+      "questions": [
+        {
+          "id": "q1",
+          "type": "mcq",
+          "question_text": "WAN’s spatio-temporal VAE compresses video by what approximate factor (time, height, width)?",
+          "code_snippet": null,
+          "options": [
+            "A) 2× time, 4× height, 4× width",
+            "B) 4× time, 8× height, 8× width",
+            "C) 8× time, 4× height, 4× width",
+            "D) No compression on time"
+          ],
+          "correct_option": "B",
+          "explanation": "Wan-VAE compresses T by 4 and spatial by 8×8."
+        },
+        {
+          "id": "q2",
+          "type": "mcq",
+          "question_text": "Patchifying after Wan-VAE uses a Conv3D kernel/stride of:",
+          "code_snippet": null,
+          "options": [
+            "A) (3,3,3) stride (1,1,1)",
+            "B) (1,2,2) stride (1,2,2)",
+            "C) (2,2,2) stride (2,2,2)",
+            "D) (1,1,1) stride (2,2,2)"
+          ],
+          "correct_option": "B",
+          "explanation": "3D conv (1,2,2) further halves spatial dims before flattening to tokens."
+        },
+        {
+          "id": "q3",
+          "type": "mcq",
+          "question_text": "Sequence length L fed to the WAN DiT (for T frames) is:",
+          "code_snippet": null,
+          "options": [
+            "A) (1+T) × H × W",
+            "B) (1 + T/4) × (H/16) × (W/16)",
+            "C) (T/4) × (H/8) × (W/8)",
+            "D) H × W × T"
+          ],
+          "correct_option": "B",
+          "explanation": "After VAE compression and (1,2,2) patchify, tokens per frame grid are H/16×W/16 and time is 1+T/4."
+        },
+        {
+          "id": "q4",
+          "type": "mcq",
+          "question_text": "WAN uses which text encoder for conditioning?",
+          "code_snippet": null,
+          "options": [
+            "A) CLIP only",
+            "B) umT5 (512 tokens) with cross-attention",
+            "C) BERT-base",
+            "D) LLaMA-7B"
+          ],
+          "correct_option": "B",
+          "explanation": "umT5 provides multilingual text embeddings via cross-attn."
+        },
+        {
+          "id": "q5",
+          "type": "mcq",
+          "question_text": "Adaptive LayerNorm in WAN DiT is:",
+          "code_snippet": null,
+          "options": [
+            "A) Per-block unique MLPs",
+            "B) Shared AdaLN MLP (PixArt-style) predicting scale/shift reused across blocks",
+            "C) BatchNorm",
+            "D) No normalization"
+          ],
+          "correct_option": "B",
+          "explanation": "A single AdaLN MLP is shared; blocks have biases."
+        },
+        {
+          "id": "q6",
+          "type": "mcq",
+          "question_text": "WAN’s diffusion target is:",
+          "code_snippet": null,
+          "options": [
+            "A) x0 prediction",
+            "B) Epsilon noise",
+            "C) Flow-matching velocity v",
+            "D) KL divergence"
+          ],
+          "correct_option": "C",
+          "explanation": "WAN trains with flow matching using velocity targets."
+        },
+        {
+          "id": "q7",
+          "type": "mcq",
+          "question_text": "For custom LoRA in WAN, the correct hook points for spatio-temporal attention are:",
+          "code_snippet": null,
+          "options": [
+            "A) Q/K/V/O projections inside DiT attention blocks",
+            "B) VAE decoder only",
+            "C) Timestep embedding only",
+            "D) Spatial convs only"
+          ],
+          "correct_option": "A",
+          "explanation": "DiT attention projections are the right LoRA targets."
+        },
+        {
+          "id": "q8",
+          "type": "mcq",
+          "question_text": "WAN VAE uses which normalization to keep causal cache valid?",
+          "code_snippet": null,
+          "options": [
+            "A) GroupNorm",
+            "B) RMSNorm",
+            "C) BatchNorm",
+            "D) InstanceNorm"
+          ],
+          "correct_option": "B",
+          "explanation": "RMSNorm enables causal feature cache in Conv3D."
+        },
+        {
+          "id": "q9",
+          "type": "mcq",
+          "question_text": "The primary efficiency bottleneck in WAN training/inference is:",
+          "code_snippet": null,
+          "options": [
+            "A) VAE encoder",
+            "B) DiT attention over long spatio-temporal sequences",
+            "C) Tokenizer",
+            "D) Optimizer step"
+          ],
+          "correct_option": "B",
+          "explanation": "Attention dominates compute for large sequence length."
+        },
+        {
+          "id": "q10",
+          "type": "mcq",
+          "question_text": "WAN’s patchify stride in time is:",
+          "code_snippet": null,
+          "options": [
+            "A) 4",
+            "B) 2",
+            "C) 1",
+            "D) Variable by schedule"
+          ],
+          "correct_option": "C",
+          "explanation": "Patchify keeps temporal stride 1; time compression is from VAE (4×)."
+        },
+        {
+          "id": "q11",
+          "type": "mcq",
+          "question_text": "LoRA targeting only temporal cues in WAN means:",
+          "code_snippet": null,
+          "options": [
+            "A) Isolating temporal-only blocks (not present)",
+            "B) Selecting attention submodules operating on joint spatio-temporal tokens but modulating time-sensitive projections",
+            "C) Editing VAE only",
+            "D) Changing beta schedule"
+          ],
+          "correct_option": "B",
+          "explanation": "WAN has joint attention; temporal emphasis is via targeted projections."
+        },
+        {
+          "id": "q12",
+          "type": "mcq",
+          "question_text": "The VAE training losses include:",
+          "code_snippet": null,
+          "options": [
+            "A) Only KL",
+            "B) L1 + KL + LPIPS, later with GAN loss",
+            "C) Cross-entropy",
+            "D) Only GAN"
+          ],
+          "correct_option": "B",
+          "explanation": "L1 + KL + perceptual; GAN added in fine-tune."
+        },
+        {
+          "id": "q13",
+          "type": "mcq",
+          "question_text": "WAN pretraining curriculum:",
+          "code_snippet": null,
+          "options": [
+            "A) Video only at full res",
+            "B) Image pretrain (256px) then staged image+video at 256→480→720",
+            "C) Text only",
+            "D) Flow only"
+          ],
+          "correct_option": "B",
+          "explanation": "Progressive image→video curriculum increases resolution."
+        },
+        {
+          "id": "q14",
+          "type": "mcq",
+          "question_text": "Token length for umT5 conditioning in WAN is:",
+          "code_snippet": null,
+          "options": [
+            "A) 77 tokens",
+            "B) 512 tokens",
+            "C) 1024 tokens",
+            "D) Variable per prompt without cap"
+          ],
+          "correct_option": "B",
+          "explanation": "WAN uses 512-token umT5 context."
+        },
+        {
+          "id": "q15",
+          "type": "mcq",
+          "question_text": "Flow Matching objective predicts:",
+          "code_snippet": null,
+          "options": [
+            "A) x0",
+            "B) epsilon only",
+            "C) velocity v along an ODE path",
+            "D) KL divergence"
+          ],
+          "correct_option": "C",
+          "explanation": "Flow Matching trains to predict velocity field."
+        },
+        {
+          "id": "q16",
+          "type": "mcq",
+          "question_text": "For LoRA placement, the safest non-destructive targets are:",
+          "code_snippet": null,
+          "options": [
+            "A) AdaLN shared MLP",
+            "B) Q/K/V/O linears in DiT blocks; optional FFN linears",
+            "C) VAE decoder convs",
+            "D) Tokenizer"
+          ],
+          "correct_option": "B",
+          "explanation": "Attention/FFN linears are standard LoRA hooks."
+        },
+        {
+          "id": "q17",
+          "type": "mcq",
+          "question_text": "WAN VAE uses causal Conv3D because:",
+          "code_snippet": null,
+          "options": [
+            "A) It is faster on CPU",
+            "B) Enables feature caching and respects temporal order",
+            "C) Avoids padding",
+            "D) Required for text encoder"
+          ],
+          "correct_option": "B",
+          "explanation": "Causal Conv3D allows cache and causal decoding."
+        },
+        {
+          "id": "q18",
+          "type": "mcq",
+          "question_text": "WAN inference optimizations include:",
+          "code_snippet": null,
+          "options": [
+            "A) Removing attention",
+            "B) Diffusion cache (attention/CFG reuse) and FP8 GEMM",
+            "C) Using CPU only",
+            "D) Disabling cross-attn"
+          ],
+          "correct_option": "B",
+          "explanation": "They cache attention/CFG and use FP8 GEMM for speed."
+        },
+        {
+          "id": "q19",
+          "type": "mcq",
+          "question_text": "LoRA aimed at style consistency should target:",
+          "code_snippet": null,
+          "options": [
+            "A) Text encoder",
+            "B) Spatio-temporal attention and FFN in DiT where style is mixed with text",
+            "C) VAE encoder only",
+            "D) Patchify conv"
+          ],
+          "correct_option": "B",
+          "explanation": "Style aligns in attention/MLP mixing conditioned on text."
+        },
+        {
+          "id": "q20",
+          "type": "mcq",
+          "question_text": "WAN’s base models (1.3B/14B) support which resolutions natively?",
+          "code_snippet": null,
+          "options": [
+            "A) 256p only",
+            "B) Up to 480p for both, 720p for larger training stage",
+            "C) 4K only",
+            "D) 64p"
+          ],
+          "correct_option": "B",
+          "explanation": "Training curriculum uses 256→480→720; 480p supported in released checkpoints."
+        }
+      ]
+    },
+    {
+      "section_id": "B",
+      "section_title": "Logic & Implementation Puzzles",
+      "total_questions": 20,
+      "marking_scheme": { "correct": 2.0, "incorrect": -0.5 },
+      "questions": [
+        {
+          "id": "q21",
+          "type": "parsons_problem",
+          "question_text": "Arrange to compute sequence length after VAE and patchify.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "L = (1 + T//4) * (H//16) * (W//16)" },
+            { "id": "b2", "text": "return L" },
+            { "id": "b3", "text": "def seq_len(T, H, W):" }
+          ],
+          "correct_order": ["b3", "b1", "b2"],
+          "explanation": "Time compressed 4×, spatial 16× after VAE+patchify."
+        },
+        {
+          "id": "q22",
+          "type": "parsons_problem",
+          "question_text": "Arrange to patchify WAN latent with Conv3D (1,2,2) then flatten.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "lat = conv3d(lat)" },
+            { "id": "b2", "text": "lat = lat.permute(0,2,3,4,1).reshape(B, -1, D)" },
+            { "id": "b3", "text": "def patchify(lat, conv3d):" },
+            { "id": "b4", "text": "return lat" }
+          ],
+          "correct_order": ["b3", "b1", "b2", "b4"],
+          "explanation": "Conv3D reduces spatial then flatten to tokens."
+        },
+        {
+          "id": "q23",
+          "type": "parsons_problem",
+          "question_text": "Arrange to select DiT attention projections for LoRA hook.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "hooks = [n for n,p in model.named_modules() if 'attn' in n and any(k in n for k in ['q_proj','k_proj','v_proj','o_proj'])]" },
+            { "id": "b2", "text": "return hooks" },
+            { "id": "b3", "text": "def list_attn_proj(model):" }
+          ],
+          "correct_order": ["b3", "b1", "b2"],
+          "explanation": "Identify attention projection layers."
+        },
+        {
+          "id": "q24",
+          "type": "parsons_problem",
+          "question_text": "Arrange to freeze base weights except LoRA modules.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "for n,p in model.named_parameters():" },
+            { "id": "b2", "text": "    p.requires_grad = ('lora' in n)" },
+            { "id": "b3", "text": "def freeze_base(model):" },
+            { "id": "b4", "text": "return model" }
+          ],
+          "correct_order": ["b3", "b1", "b2", "b4"],
+          "explanation": "Enable grads only on LoRA parameters."
+        },
+        {
+          "id": "q25",
+          "type": "parsons_problem",
+          "question_text": "Arrange to compute velocity target from flow matching path (pseudo).",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "v = drift(t) * x + diffusion(t) * eps" },
+            { "id": "b2", "text": "return v" },
+            { "id": "b3", "text": "def velocity(x, t, eps, drift, diffusion):" }
+          ],
+          "correct_order": ["b3", "b1", "b2"],
+          "explanation": "Flow matching uses velocity field; schematic only."
+        },
+        {
+          "id": "q26",
+          "type": "parsons_problem",
+          "question_text": "Arrange to compute latent shape after VAE compression.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "T_lat, H_lat, W_lat = T//4, H//8, W//8" },
+            { "id": "b2", "text": "return T_lat, H_lat, W_lat" },
+            { "id": "b3", "text": "def latent_shape(T, H, W):" }
+          ],
+          "correct_order": ["b3", "b1", "b2"],
+          "explanation": "Wan-VAE compresses 4× temporal, 8× spatial."
+        },
+        {
+          "id": "q27",
+          "type": "parsons_problem",
+          "question_text": "Arrange to add bucket/aspect embedding to timestep embedding.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "bucket_emb = bucket_table[bucket_id]" },
+            { "id": "b2", "text": "t_emb = t_emb + bucket_emb" },
+            { "id": "b3", "text": "return t_emb" },
+            { "id": "b4", "text": "def add_bucket(t_emb, bucket_id, bucket_table):" }
+          ],
+          "correct_order": ["b4", "b1", "b2", "b3"],
+          "explanation": "Fuse aspect info into time embedding."
+        },
+        {
+          "id": "q28",
+          "type": "parsons_problem",
+          "question_text": "Arrange to extract umT5 embeddings with attention mask.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "tok = tokenizer(texts, return_tensors='pt', padding='max_length', max_length=512, truncation=True)" },
+            { "id": "b2", "text": "emb = umt5(tok.input_ids, attention_mask=tok.attention_mask).last_hidden_state" },
+            { "id": "b3", "text": "return emb, tok.attention_mask" },
+            { "id": "b4", "text": "def encode_text(umt5, tokenizer, texts):" }
+          ],
+          "correct_order": ["b4", "b1", "b2", "b3"],
+          "explanation": "Tokenize to 512, encode with mask."
+        },
+        {
+          "id": "q29",
+          "type": "parsons_problem",
+          "question_text": "Arrange to list DiT blocks for selective LoRA.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "blocks = [m for n,m in model.named_modules() if 'dit_blocks' in n]" },
+            { "id": "b2", "text": "return blocks" },
+            { "id": "b3", "text": "def list_dit_blocks(model):" }
+          ],
+          "correct_order": ["b3", "b1", "b2"],
+          "explanation": "Identify DiT blocks for targeted adapters."
+        },
+        {
+          "id": "q30",
+          "type": "parsons_problem",
+          "question_text": "Arrange to check if attention uses RoPE on Q/K.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "q_rot, k_rot = apply_rope(q, k, freqs)" },
+            { "id": "b2", "text": "return q_rot, k_rot" },
+            { "id": "b3", "text": "def rope(q, k, freqs):" }
+          ],
+          "correct_order": ["b3", "b1", "b2"],
+          "explanation": "RoPE is applied to Q/K."
+        },
+        {
+          "id": "q31",
+          "type": "fill_in_blank",
+          "question_text": "WAN VAE compression: ______× in time, 8× in height, 8× in width.",
+          "correct_answer": "4",
+          "explanation": "4× temporal compression."
+        },
+        {
+          "id": "q32",
+          "type": "fill_in_blank",
+          "question_text": "Patchify uses Conv3D kernel/stride (1, ______, ______).",
+          "correct_answer": "2, 2",
+          "explanation": "Spatial stride 2."
+        },
+        {
+          "id": "q33",
+          "type": "fill_in_blank",
+          "question_text": "Sequence length L = (1 + T/4) × (H/16) × (W/______ ).",
+          "correct_answer": "16",
+          "explanation": "Spatial grid 16×16 after patchify."
+        },
+        {
+          "id": "q34",
+          "type": "fill_in_blank",
+          "question_text": "WAN uses ______ tokens from umT5.",
+          "correct_answer": "512",
+          "explanation": "512-token context."
+        },
+        {
+          "id": "q35",
+          "type": "fill_in_blank",
+          "question_text": "WAN’s DiT target is ______ (flow matching) rather than eps-only.",
+          "correct_answer": "velocity v",
+          "explanation": "Flow matching predicts velocity."
+        },
+        {
+          "id": "q36",
+          "type": "fill_in_blank",
+          "question_text": "LoRA hook points: Q/K/V/______ projections.",
+          "correct_answer": "O",
+          "explanation": "Include output projection."
+        },
+        {
+          "id": "q37",
+          "type": "fill_in_blank",
+          "question_text": "Adaptive LayerNorm parameters are predicted by a shared ______.",
+          "correct_answer": "MLP",
+          "explanation": "Shared AdaLN MLP."
+        },
+        {
+          "id": "q38",
+          "type": "fill_in_blank",
+          "question_text": "RMSNorm replaces GroupNorm to preserve ______ causality.",
+          "correct_answer": "temporal",
+          "explanation": "Causal cache friendly."
+        },
+        {
+          "id": "q39",
+          "type": "fill_in_blank",
+          "question_text": "Diffusion cache reuses attention/CFG outputs across ______.",
+          "correct_answer": "steps",
+          "explanation": "Cached across timesteps."
+        },
+        {
+          "id": "q40",
+          "type": "fill_in_blank",
+          "question_text": "Flow Matching integrates along an O______ D______ path.",
+          "correct_answer": "ODE",
+          "explanation": "Velocity along ODE path."
+        }
+      ]
+    },
+    {
+      "section_id": "C",
+      "section_title": "Deep Theory & Coding",
+      "total_questions": 10,
+      "marking_scheme": { "correct": 4.0, "incorrect": -1.0 },
+      "questions": [
+        {
+          "id": "q41",
+          "type": "theory_open_ended",
+          "question_text": "Describe the full WAN pipeline from pixels to DiT tokens: VAE compression (4×T, 8×H, 8×W), patchify Conv3D (1,2,2), token flattening, and text conditioning with umT5 + cross-attn. Include shapes at each stage.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "VAE compresses to (1+T/4, H/8, W/8, C)",
+              "Patchify conv (1,2,2) -> H/16, W/16, stride 1 in T",
+              "Flatten to L=(1+T/4)*H/16*W/16 tokens of dim D",
+              "Text encoder umT5 512 tokens, cross-attn",
+              "Time embedding + AdaLN shared MLP"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q42",
+          "type": "theory_open_ended",
+          "question_text": "Explain Flow Matching velocity targets vs epsilon prediction and how WAN’s DiT integrates this into training. Include why velocity can stabilize scaling across noise levels.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Flow matching predicts v along ODE path",
+              "Contrast with eps prediction in DDPM",
+              "Velocity has more uniform scale across t/log-SNR",
+              "Training objective uses v MSE",
+              "Implications for sampling and loss weighting"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q43",
+          "type": "theory_open_ended",
+          "question_text": "Propose LoRA hook points for WAN aiming at temporal/style consistency: which DiT projections to wrap, whether to include FFN, and how to avoid touching VAE. Justify based on architecture.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Hook Q/K/V/O in DiT attention; optional FFN linears",
+              "No separate temporal-only blocks; joint spatio-temporal attention",
+              "Avoid VAE to prevent distribution shift",
+              "Optionally per-head vs fused",
+              "Rationale: text/style mixing in attention/MLP"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q44",
+          "type": "theory_open_ended",
+          "question_text": "Detail the WAN VAE training pipeline: 2D→3D inflation, losses (L1, KL, LPIPS, GAN), causal Conv3D, RMSNorm, and how these choices support efficient inference with feature cache.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Train 2D VAE, inflate to 3D causal",
+              "Loss cocktail L1+KL+LPIPS, later GAN",
+              "Causal Conv3D + RMSNorm for cache",
+              "Compression ratios",
+              "Inference benefit from cache and reduced memory"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q45",
+          "type": "theory_open_ended",
+          "question_text": "Discuss the shared AdaLN MLP design: how a single MLP predicts modulation reused across blocks, parameter savings vs non-shared, and implications for LoRA placement.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Shared MLP outputs modulation (scale/shift) for AdaLN",
+              "Blocks reuse MLP; biases per block",
+              "Saves params (~25%) vs per-block MLP",
+              "LoRA on attention/FFN leaves AdaLN shared intact",
+              "Impact on finetune expressiveness"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q46",
+          "type": "theory_open_ended",
+          "question_text": "Explain why you cannot “target temporal-only blocks” in WAN and how to instead focus adapters on time-sensitive pathways within joint attention.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "WAN uses joint spatio-temporal attention, no isolated temporal stack",
+              "Time sensitivity via positional encodings and attention over time tokens",
+              "Adapters on attention projections influence temporal mixing",
+              "Optionally bias toward layers handling longer T",
+              "Clarify misconception of separate temporal modules"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q47",
+          "type": "theory_open_ended",
+          "question_text": "Describe diffusion cache optimization in WAN inference (attention/CFG reuse) and how it affects throughput without quality loss.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Attention outputs similar across steps -> cache reuse",
+              "CFG similarity late -> reuse unconditional/conditional with compensation",
+              "Selective step caching validated on val set",
+              "Throughput gains (1.62× reported)",
+              "No quality degradation if done carefully"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q48",
+          "type": "theory_open_ended",
+          "question_text": "Outline parallelism strategy for WAN DiT (DP+FSDP+Ulysses/Ring) and why VAE/text encoder use different schemes.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "DiT large activation/weights -> FSDP with Ulysses/Ring attn parallel",
+              "DP outer layer for data",
+              "VAE small -> DP only; text encoder sharded (FSDP) due to 20GB",
+              "Reason about memory vs compute distribution"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q49",
+          "type": "theory_open_ended",
+          "question_text": "Propose how to extend WAN to handle longer T at inference (e.g., chunking) without retraining VAE/DiT weights; discuss risks to temporal coherence.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Chunk with overlap, reuse same VAE/DiT",
+              "Blend overlaps, optional conditioning on previous chunk",
+              "Risk: seams, drift; mitigate with overlap and guidance schedules",
+              "No retraining needed but quality may degrade"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q50",
+          "type": "theory_open_ended",
+          "question_text": "Explain how WAN’s flow-matching DiT and spatio-temporal VAE together constrain valid LoRA finetune targets to avoid distribution shift.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Flow-matching expects consistent velocity field; altering VAE breaks latent dist",
+              "LoRA should stay in DiT projections to preserve VAE distribution",
+              "Avoid modifying VAE/text unless retrained",
+              "Maintains alignment between encoder/decoder and DiT dynamics"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        }
+      ]
+    }
+  ]
+}

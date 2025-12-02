@@ -1,0 +1,660 @@
+{
+  "module_name": "02_LoRA_Strategies_for_WAN_DiT",
+  "difficulty_level": "Hard",
+  "rendering_note": "Math tokens appear as plain text (e.g., alpha_bar_t, sqrt(beta(t)), mu, sigma^2). Render them with LaTeX/KaTeX/MathJax in the frontend.",
+  "sections": [
+    {
+      "section_id": "A",
+      "section_title": "Conceptual Recall (MCQs)",
+      "total_questions": 20,
+      "marking_scheme": { "correct": 2.0, "incorrect": -0.5 },
+      "questions": [
+        {
+          "id": "q1",
+          "type": "mcq",
+          "question_text": "Best-practice LoRA targets for WAN’s DiT are:",
+          "code_snippet": null,
+          "options": [
+            "A) Only VAE encoder",
+            "B) Q/K/V/O projections and optionally FFN linears inside DiT blocks",
+            "C) Tokenizer",
+            "D) AdaLN shared MLP only"
+          ],
+          "correct_option": "B",
+          "explanation": "LoRA hooks go on attention and FFN projections."
+        },
+        {
+          "id": "q2",
+          "type": "mcq",
+          "question_text": "Per-head LoRA for attention:",
+          "code_snippet": null,
+          "options": [
+            "A) Reduces parameters",
+            "B) Adds head-specific capacity at extra VRAM cost",
+            "C) Ignores heads",
+            "D) Breaks cross-attn"
+          ],
+          "correct_option": "B",
+          "explanation": "Per-head LoRA increases capacity per head."
+        },
+        {
+          "id": "q3",
+          "type": "mcq",
+          "question_text": "LoRA rank selection should consider:",
+          "code_snippet": null,
+          "options": [
+            "A) Only token length",
+            "B) Motion/style complexity and VRAM budget",
+            "C) Beta schedule",
+            "D) Timestep count alone"
+          ],
+          "correct_option": "B",
+          "explanation": "Rank controls capacity vs memory."
+        },
+        {
+          "id": "q4",
+          "type": "mcq",
+          "question_text": "Zero-init of LoRA output ensures:",
+          "code_snippet": null,
+          "options": [
+            "A) Immediate divergence",
+            "B) Model starts identical to base before training adapters",
+            "C) Faster inference",
+            "D) Higher LR"
+          ],
+          "correct_option": "B",
+          "explanation": "Zero-init preserves base behavior initially."
+        },
+        {
+          "id": "q5",
+          "type": "mcq",
+          "question_text": "Adapter dropout (dropping LoRA delta) is used to:",
+          "code_snippet": null,
+          "options": [
+            "A) Disable training",
+            "B) Regularize adapters, reduce overfit",
+            "C) Change VAE",
+            "D) Freeze grads"
+          ],
+          "correct_option": "B",
+          "explanation": "Dropout on delta improves robustness."
+        },
+        {
+          "id": "q6",
+          "type": "mcq",
+          "question_text": "Layer-wise alpha scaling allows:",
+          "code_snippet": null,
+          "options": [
+            "A) Equal influence everywhere",
+            "B) Different LoRA strength per DiT layer",
+            "C) Removing LoRA",
+            "D) Changing token length"
+          ],
+          "correct_option": "B",
+          "explanation": "Scale per layer to tune effect."
+        },
+        {
+          "id": "q7",
+          "type": "mcq",
+          "question_text": "WAN has no isolated “temporal blocks”; temporal emphasis with LoRA is achieved by:",
+          "code_snippet": null,
+          "options": [
+            "A) Attaching LoRA only to VAE",
+            "B) Targeting spatio-temporal attention projections and layers handling longer T",
+            "C) Removing spatial tokens",
+            "D) Using CFG only"
+          ],
+          "correct_option": "B",
+          "explanation": "Joint attention; adapters focus on time via attention hooks."
+        },
+        {
+          "id": "q8",
+          "type": "mcq",
+          "question_text": "LoRA on AdaLN shared MLP is risky because:",
+          "code_snippet": null,
+          "options": [
+            "A) It is immutable",
+            "B) It globally modulates all blocks; small errors can destabilize all layers",
+            "C) It affects VAE",
+            "D) It changes tokenization"
+          ],
+          "correct_option": "B",
+          "explanation": "Shared MLP affects all blocks; prefer attention/FFN hooks."
+        },
+        {
+          "id": "q9",
+          "type": "mcq",
+          "question_text": "Merging LoRA into base weights:",
+          "code_snippet": null,
+          "options": [
+            "A) Is reversible without saving adapters",
+            "B) Is destructive unless adapters are stored separately",
+            "C) Freezes CFG",
+            "D) Changes beta"
+          ],
+          "correct_option": "B",
+          "explanation": "Merged weights lose adapter unless backup kept."
+        },
+        {
+          "id": "q10",
+          "type": "mcq",
+          "question_text": "To limit spatial drift when targeting style, avoid:",
+          "code_snippet": null,
+          "options": [
+            "A) LoRA on text cross-attn only",
+            "B) High-rank LoRA on early spatial-downsample layers",
+            "C) Modest rank on mid/high layers",
+            "D) Per-head LoRA on higher layers"
+          ],
+          "correct_option": "B",
+          "explanation": "Early layers control broad layout; heavy LoRA can drift spatial structure."
+        },
+        {
+          "id": "q11",
+          "type": "mcq",
+          "question_text": "Adapter parameter count scales with:",
+          "code_snippet": null,
+          "options": [
+            "A) Rank r only",
+            "B) r × (d_in + d_out)",
+            "C) Token length",
+            "D) VAE size"
+          ],
+          "correct_option": "B",
+          "explanation": "Low-rank factors sizes depend on input/output dims."
+        },
+        {
+          "id": "q12",
+          "type": "mcq",
+          "question_text": "For style LoRA, placing adapters on cross-attn K/V can:",
+          "code_snippet": null,
+          "options": [
+            "A) Reduce text alignment",
+            "B) Strengthen or specialize conditioning for stylistic prompts",
+            "C) Break VAE",
+            "D) Remove CFG"
+          ],
+          "correct_option": "B",
+          "explanation": "Cross-attn LoRA adjusts how text guides style."
+        },
+        {
+          "id": "q13",
+          "type": "mcq",
+          "question_text": "If motion artifacts persist, you may increase LoRA influence on:",
+          "code_snippet": null,
+          "options": [
+            "A) Text encoder",
+            "B) Higher-resolution attention layers capturing fine motion",
+            "C) VAE decoder",
+            "D) Tokenizer"
+          ],
+          "correct_option": "B",
+          "explanation": "Higher-res layers impact fine motion details."
+        },
+        {
+          "id": "q14",
+          "type": "mcq",
+          "question_text": "Adapter dropout should be applied:",
+          "code_snippet": null,
+          "options": [
+            "A) During inference only",
+            "B) During training to regularize; disabled at inference",
+            "C) Always disabled",
+            "D) Only on VAE"
+          ],
+          "correct_option": "B",
+          "explanation": "Dropout is a train-time regularizer."
+        },
+        {
+          "id": "q15",
+          "type": "mcq",
+          "question_text": "LoRA on FFN can help because:",
+          "code_snippet": null,
+          "options": [
+            "A) FFN mixes channels and can encode style/temporal biases",
+            "B) It changes VAE",
+            "C) It reduces compute",
+            "D) It alters beta"
+          ],
+          "correct_option": "A",
+          "explanation": "FFN contributes to feature mixing; LoRA there can bias outputs."
+        },
+        {
+          "id": "q16",
+          "type": "mcq",
+          "question_text": "LoRA rank too high relative to data size risks:",
+          "code_snippet": null,
+          "options": [
+            "A) Underfitting",
+            "B) Overfitting and instability",
+            "C) Faster convergence without issue",
+            "D) Changing token length"
+          ],
+          "correct_option": "B",
+          "explanation": "Excess capacity overfits small finetune sets."
+        },
+        {
+          "id": "q17",
+          "type": "mcq",
+          "question_text": "To keep adapters swappable per task/style, you should:",
+          "code_snippet": null,
+          "options": [
+            "A) Merge permanently",
+            "B) Keep LoRA separate and load/stack at runtime",
+            "C) Bake into tokenizer",
+            "D) Modify VAE"
+          ],
+          "correct_option": "B",
+          "explanation": "Unmerged adapters enable swapping."
+        },
+        {
+          "id": "q18",
+          "type": "mcq",
+          "question_text": "LoRA applied to only conditional branch in CFG will:",
+          "code_snippet": null,
+          "options": [
+            "A) Have no effect",
+            "B) Misalign CFG because unconditional branch differs",
+            "C) Improve CFG",
+            "D) Merge branches"
+          ],
+          "correct_option": "B",
+          "explanation": "Both branches should share adapters or be handled consistently."
+        },
+        {
+          "id": "q19",
+          "type": "mcq",
+          "question_text": "Adapter scaling alpha divided by rank r is used to:",
+          "code_snippet": null,
+          "options": [
+            "A) Normalize update magnitude",
+            "B) Increase LR",
+            "C) Reduce batch",
+            "D) Change token length"
+          ],
+          "correct_option": "A",
+          "explanation": "Alpha/r normalizes LoRA delta."
+        },
+        {
+          "id": "q20",
+          "type": "mcq",
+          "question_text": "LoRA on VAE is generally avoided because:",
+          "code_snippet": null,
+          "options": [
+            "A) It’s too small",
+            "B) It changes the latent distribution seen during DiT training, causing mismatch",
+            "C) It improves motion",
+            "D) It accelerates inference"
+          ],
+          "correct_option": "B",
+          "explanation": "Altering VAE breaks alignment with DiT training distribution."
+        }
+      ]
+    },
+    {
+      "section_id": "B",
+      "section_title": "Logic & Implementation Puzzles",
+      "total_questions": 20,
+      "marking_scheme": { "correct": 2.0, "incorrect": -0.5 },
+      "questions": [
+        {
+          "id": "q21",
+          "type": "parsons_problem",
+          "question_text": "Arrange LoRA forward with adapter dropout.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "base = F.linear(x, self.weight, self.bias)" },
+            { "id": "b2", "text": "delta = self.B(self.A(x)) * (self.alpha / self.r)" },
+            { "id": "b3", "text": "if self.training: delta = self.dropout(delta)" },
+            { "id": "b4", "text": "return base + delta" },
+            { "id": "b5", "text": "def forward(self, x):" }
+          ],
+          "correct_order": ["b5", "b1", "b2", "b3", "b4"],
+          "explanation": "Dropout only in training on delta."
+        },
+        {
+          "id": "q22",
+          "type": "parsons_problem",
+          "question_text": "Arrange per-layer alpha scaling for LoRA.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "delta = delta * layer_alpha" },
+            { "id": "b2", "text": "delta = self.B(self.A(x)) * (self.alpha / self.r)" },
+            { "id": "b3", "text": "return base + delta" },
+            { "id": "b4", "text": "base = F.linear(x, self.weight, self.bias)" },
+            { "id": "b5", "text": "def forward(self, x, layer_alpha):" }
+          ],
+          "correct_order": ["b5", "b4", "b2", "b1", "b3"],
+          "explanation": "Scale LoRA output by per-layer alpha."
+        },
+        {
+          "id": "q23",
+          "type": "parsons_problem",
+          "question_text": "Arrange to merge LoRA into base weight.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "merged = weight + (alpha/r) * (A @ B)" },
+            { "id": "b2", "text": "return merged" },
+            { "id": "b3", "text": "def merge(weight, A, B, alpha, r):" }
+          ],
+          "correct_order": ["b3", "b1", "b2"],
+          "explanation": "Compute fused weight."
+        },
+        {
+          "id": "q24",
+          "type": "parsons_problem",
+          "question_text": "Arrange to disable LoRA at inference without merging.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "if not self.active: return F.linear(x, self.weight, self.bias)" },
+            { "id": "b2", "text": "delta = self.B(self.A(x)) * (self.alpha / self.r)" },
+            { "id": "b3", "text": "return base + delta" },
+            { "id": "b4", "text": "def forward(self, x):" },
+            { "id": "b5", "text": "base = F.linear(x, self.weight, self.bias)" }
+          ],
+          "correct_order": ["b4", "b1", "b5", "b2", "b3"],
+          "explanation": "Active flag bypasses LoRA."
+        },
+        {
+          "id": "q25",
+          "type": "parsons_problem",
+          "question_text": "Arrange optimizer groups to exclude decay on LoRA/bias/norm.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "decay, nodecay = [], []" },
+            { "id": "b2", "text": "for n,p in model.named_parameters():\n    if not p.requires_grad: continue\n    (nodecay if ('bias' in n or 'norm' in n or 'lora' in n) else decay).append(p)" },
+            { "id": "b3", "text": "return AdamW([{\"params\": decay, \"weight_decay\": wd}, {\"params\": nodecay, \"weight_decay\": 0.0}], lr=lr)" },
+            { "id": "b4", "text": "def make_opt(model, lr, wd):" }
+          ],
+          "correct_order": ["b4", "b1", "b2", "b3"],
+          "explanation": "Group params for decay vs no-decay."
+        },
+        {
+          "id": "q26",
+          "type": "parsons_problem",
+          "question_text": "Arrange to apply LoRA only on specified layer indices.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "for idx, block in enumerate(model.dit_blocks):" },
+            { "id": "b2", "text": "    block.enable_lora = (idx in target_layers)" },
+            { "id": "b3", "text": "def select_layers(model, target_layers):" },
+            { "id": "b4", "text": "return model" }
+          ],
+          "correct_order": ["b3", "b1", "b2", "b4"],
+          "explanation": "Flag only chosen layers."
+        },
+        {
+          "id": "q27",
+          "type": "parsons_problem",
+          "question_text": "Arrange to ensure LoRA applies to both conditional/unconditional branches in CFG.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "eps_c = model_cond(x_t, t, cond)" },
+            { "id": "b2", "text": "eps_u = model_uncond(x_t, t, null)" },
+            { "id": "b3", "text": "return eps_u + w * (eps_c - eps_u)" },
+            { "id": "b4", "text": "def cfg(model_cond, model_uncond, x_t, t, cond, null, w):" }
+          ],
+          "correct_order": ["b4", "b2", "b1", "b3"],
+          "explanation": "Both branches must carry LoRA."
+        },
+        {
+          "id": "q28",
+          "type": "parsons_problem",
+          "question_text": "Arrange to compute LoRA parameter count.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "params = sum(p.numel() for n,p in model.named_parameters() if 'lora' in n)" },
+            { "id": "b2", "text": "return params" },
+            { "id": "b3", "text": "def lora_params(model):" }
+          ],
+          "correct_order": ["b3", "b1", "b2"],
+          "explanation": "Count trainable adapter params."
+        },
+        {
+          "id": "q29",
+          "type": "parsons_problem",
+          "question_text": "Arrange per-head LoRA construction for attention.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "heads = nn.ModuleList([LoRAHead(d_head, d_model, r) for _ in range(num_heads)])" },
+            { "id": "b2", "text": "return heads" },
+            { "id": "b3", "text": "def build_heads(num_heads, d_head, d_model, r):" }
+          ],
+          "correct_order": ["b3", "b1", "b2"],
+          "explanation": "Construct per-head adapters."
+        },
+        {
+          "id": "q30",
+          "type": "parsons_problem",
+          "question_text": "Arrange adapter dropout rate scheduling.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "p = p_min + (p_max - p_min) * schedule(step/steps)" },
+            { "id": "b2", "text": "return p" },
+            { "id": "b3", "text": "def dropout_schedule(step, steps, p_min, p_max, schedule):" }
+          ],
+          "correct_order": ["b3", "b1", "b2"],
+          "explanation": "Compute dropout prob by schedule."
+        },
+        {
+          "id": "q31",
+          "type": "fill_in_blank",
+          "question_text": "LoRA delta = (alpha/______ ) * A @ B.",
+          "correct_answer": "r",
+          "explanation": "Scaled by rank."
+        },
+        {
+          "id": "q32",
+          "type": "fill_in_blank",
+          "question_text": "Per-head LoRA increases head-specific ______.",
+          "correct_answer": "expressiveness/capacity",
+          "explanation": "More capacity per head."
+        },
+        {
+          "id": "q33",
+          "type": "fill_in_blank",
+          "question_text": "Adapter dropout is enabled during ______ only.",
+          "correct_answer": "training",
+          "explanation": "Regularization in train."
+        },
+        {
+          "id": "q34",
+          "type": "fill_in_blank",
+          "question_text": "LoRA on cross-attn K/V can strengthen ______ conditioning.",
+          "correct_answer": "text/style",
+          "explanation": "Better conditioning."
+        },
+        {
+          "id": "q35",
+          "type": "fill_in_blank",
+          "question_text": "Merged LoRA is ______ if adapters discarded.",
+          "correct_answer": "destructive",
+          "explanation": "Cannot unmerge without delta."
+        },
+        {
+          "id": "q36",
+          "type": "fill_in_blank",
+          "question_text": "Rank too high on small data risks ______.",
+          "correct_answer": "overfitting",
+          "explanation": "Too much capacity."
+        },
+        {
+          "id": "q37",
+          "type": "fill_in_blank",
+          "question_text": "Both CFG branches should share the same ______ adapters.",
+          "correct_answer": "LoRA",
+          "explanation": "Keep consistent."
+        },
+        {
+          "id": "q38",
+          "type": "fill_in_blank",
+          "question_text": "Layer-wise alpha scaling tunes adapter ______ per block.",
+          "correct_answer": "strength",
+          "explanation": "Control influence."
+        },
+        {
+          "id": "q39",
+          "type": "fill_in_blank",
+          "question_text": "Avoid LoRA on VAE to prevent latent distribution ______.",
+          "correct_answer": "shift/mismatch",
+          "explanation": "Keep VAE unchanged."
+        },
+        {
+          "id": "q40",
+          "type": "fill_in_blank",
+          "question_text": "LoRA capacity scales with rank and ______ dimensions.",
+          "correct_answer": "input/output",
+          "explanation": "Dims matter."
+        }
+      ]
+    },
+    {
+      "section_id": "C",
+      "section_title": "Deep Theory & Coding",
+      "total_questions": 10,
+      "marking_scheme": { "correct": 4.0, "incorrect": -1.0 },
+      "questions": [
+        {
+          "id": "q41",
+          "type": "theory_open_ended",
+          "question_text": "Design a WAN-specific LoRA plan for motion coherence: choose layers (early/mid/high), rank, alpha, per-head vs fused, and justify based on joint spatio-temporal attention.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Select attention layers across scales; emphasize mid/high for motion detail",
+              "Rank/alpha choices tied to VRAM and desired strength",
+              "Per-head vs fused trade-off",
+              "No isolated temporal blocks; joint attention rationale"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q42",
+          "type": "theory_open_ended",
+          "question_text": "Compare LoRA on attention vs FFN for style conditioning in WAN, including how cross-attn K/V adapters affect prompt adherence.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Attention LoRA changes token mixing; cross-attn affects conditioning strength",
+              "FFN LoRA biases channel mixing",
+              "Style adherence vs overconditioning",
+              "Trade-offs in parameter count and effect"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q43",
+          "type": "theory_open_ended",
+          "question_text": "Explain why adapter dropout and zero-init are important for stable LoRA finetunes on large DiT models like WAN.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Zero-init preserves base behavior",
+              "Dropout regularizes small finetune data",
+              "Prevents early drift and overfit",
+              "Pertinent for large models with high capacity"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q44",
+          "type": "theory_open_ended",
+          "question_text": "Propose a method to keep LoRA swap-friendly for multiple styles/motions: handling CFG branches, unmerged adapters, and storage/versioning.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Keep adapters unmerged, load at runtime",
+              "Apply to both conditional/unconditional branches",
+              "Version control per style/motion",
+              "Optional stacking or scaling per adapter"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q45",
+          "type": "theory_open_ended",
+          "question_text": "Design an experiment to measure rank sensitivity: vary rank, hold data/steps constant, report VRAM, throughput, and temporal metrics (warp error/tLPIPS).",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Control variables; vary rank",
+              "Measure VRAM, speed, temporal metrics",
+              "Analyze quality vs cost curve",
+              "Discuss diminishing returns"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q46",
+          "type": "theory_open_ended",
+          "question_text": "Explain why LoRA should be applied identically to both CFG branches and what happens if only conditional is adapted.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "CFG difference assumes same base for cond/uncond",
+              "Adapting one branch misaligns score difference",
+              "Causes overshoot/underconditioning artifacts",
+              "Solution: share adapters or adapt both"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q47",
+          "type": "theory_open_ended",
+          "question_text": "Discuss risks of touching AdaLN shared MLP with LoRA and why attention/FFN are safer targets in WAN.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Shared MLP modulates all blocks; small errors propagate",
+              "Could destabilize entire network",
+              "Attention/FFN localize changes",
+              "Safer to avoid shared AdaLN for targeted finetune"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q48",
+          "type": "theory_open_ended",
+          "question_text": "Explain why VAE LoRA is discouraged for WAN and how it can break DiT training assumptions.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "VAE defines latent distribution; DiT trained on fixed VAE",
+              "Changing VAE shifts scale/statistics",
+              "Breaks alignment with flow-matching target",
+              "Better to leave VAE frozen"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q49",
+          "type": "theory_open_ended",
+          "question_text": "Outline how to bias LoRA strength toward mid/high-resolution blocks to improve fine motion without harming global layout.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Assign higher alpha/rank to later blocks",
+              "Keep early layers low rank/alpha to preserve layout",
+              "Rationale: later blocks refine detail/motion",
+              "Validation strategy to confirm spatial fidelity"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q50",
+          "type": "theory_open_ended",
+          "question_text": "Compare merged vs unmerged LoRA deployment for WAN in production: latency, flexibility, risk of irreversible changes.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Merged: no runtime overhead, irreversible without adapter",
+              "Unmerged: slight overhead, swap flexibility",
+              "Latency vs flexibility trade-off",
+              "Recommendation per use case"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        }
+      ]
+    }
+  ]
+}
