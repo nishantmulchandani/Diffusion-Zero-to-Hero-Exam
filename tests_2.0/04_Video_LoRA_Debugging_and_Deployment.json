@@ -1,0 +1,659 @@
+{
+  "module_name": "04_Video_LoRA_Debugging_and_Deployment",
+  "difficulty_level": "Hard",
+  "rendering_note": "Math tokens appear as plain text (e.g., alpha_bar_t, sqrt(beta(t)), mu, sigma^2). Render them with LaTeX/KaTeX/MathJax in the frontend.",
+  "sections": [
+    {
+      "section_id": "A",
+      "section_title": "Conceptual Recall (MCQs)",
+      "total_questions": 20,
+      "marking_scheme": { "correct": 2.0, "incorrect": -0.5 },
+      "questions": [
+        {
+          "id": "q1",
+          "type": "mcq",
+          "question_text": "If outputs with LoRA look identical to base, likely cause is:",
+          "code_snippet": null,
+          "options": [
+            "A) LoRA rank too high",
+            "B) LoRA not loaded/merged, or requires_grad disabled",
+            "C) Beta schedule wrong",
+            "D) Too much CFG"
+          ],
+          "correct_option": "B",
+          "explanation": "Adapters may not be active."
+        },
+        {
+          "id": "q2",
+          "type": "mcq",
+          "question_text": "Temporal flicker persisting after finetune suggests:",
+          "code_snippet": null,
+          "options": [
+            "A) Overfitting spatial",
+            "B) Too few frames or weak temporal loss; adapters not strong enough",
+            "C) Too many steps",
+            "D) VAE scale perfect"
+          ],
+          "correct_option": "B",
+          "explanation": "Need more temporal signal or stronger adapters."
+        },
+        {
+          "id": "q3",
+          "type": "mcq",
+          "question_text": "NaNs during training often fixed by:",
+          "code_snippet": null,
+          "options": [
+            "A) Raising LR",
+            "B) Lower LR, clip grads, reduce alpha/r, check AMP scaler",
+            "C) Removing optimizer",
+            "D) Ignoring"
+          ],
+          "correct_option": "B",
+          "explanation": "Stabilize updates."
+        },
+        {
+          "id": "q4",
+          "type": "mcq",
+          "question_text": "CFG overshoot in few-step samplers produces:",
+          "code_snippet": null,
+          "options": [
+            "A) Smooth motion",
+            "B) Saturated/blown-out frames, instability",
+            "C) Lower FLOPs",
+            "D) Faster convergence"
+          ],
+          "correct_option": "B",
+          "explanation": "High w amplifies errors."
+        },
+        {
+          "id": "q5",
+          "type": "mcq",
+          "question_text": "To check LoRA actually applies, one can:",
+          "code_snippet": null,
+          "options": [
+            "A) Count tokens",
+            "B) Run with vs without LoRA on same seed and compare outputs or eps predictions",
+            "C) Remove EMA",
+            "D) Increase T"
+          ],
+          "correct_option": "B",
+          "explanation": "Compare outputs to see effect."
+        },
+        {
+          "id": "q6",
+          "type": "mcq",
+          "question_text": "VRAM leaks over iterations likely from:",
+          "code_snippet": null,
+          "options": [
+            "A) torch.no_grad everywhere",
+            "B) Saving graphs in lists or not clearing optimizer state",
+            "C) Too small LR",
+            "D) Fewer steps"
+          ],
+          "correct_option": "B",
+          "explanation": "Graphs kept alive leak memory."
+        },
+        {
+          "id": "q7",
+          "type": "mcq",
+          "question_text": "Temporal misalignment (objects drifting) in inference can be caused by:",
+          "code_snippet": null,
+          "options": [
+            "A) Correct padding",
+            "B) Different preprocessing (resize/pad) than training or wrong T",
+            "C) Small batch",
+            "D) EMA on"
+          ],
+          "correct_option": "B",
+          "explanation": "Mismatch in preprocessing causes shifts."
+        },
+        {
+          "id": "q8",
+          "type": "mcq",
+          "question_text": "If LoRA training improves loss but samples degrade, suspect:",
+          "code_snippet": null,
+          "options": [
+            "A) Correct targets",
+            "B) Target mismatch (eps/v), wrong scaling, or overfit to narrow motion",
+            "C) Better generalization",
+            "D) Proper CFG"
+          ],
+          "correct_option": "B",
+          "explanation": "Loss may not reflect sample quality if misimplemented."
+        },
+        {
+          "id": "q9",
+          "type": "mcq",
+          "question_text": "For deployment with dynamic LoRA swap, merging should be:",
+          "code_snippet": null,
+          "options": [
+            "A) Always on",
+            "B) Avoided; keep adapters separate and load as needed",
+            "C) Mandatory",
+            "D) Done once then discarded"
+          ],
+          "correct_option": "B",
+          "explanation": "Keep LoRA unmerged to swap dynamically."
+        },
+        {
+          "id": "q10",
+          "type": "mcq",
+          "question_text": "Temporal flicker in long clips at inference can be reduced by:",
+          "code_snippet": null,
+          "options": [
+            "A) Larger guidance",
+            "B) Sliding-window with overlap and blending, or more steps near t=0",
+            "C) Removing temporal attn",
+            "D) Higher LR"
+          ],
+          "correct_option": "B",
+          "explanation": "Overlap/blend mitigates seams; finer steps stabilize late frames."
+        },
+        {
+          "id": "q11",
+          "type": "mcq",
+          "question_text": "Safety for video generation often requires:",
+          "code_snippet": null,
+          "options": [
+            "A) Nothing",
+            "B) Prompt filtering, safety classifiers per frame/clip, and human checks",
+            "C) Beta schedule change",
+            "D) Removing CFG"
+          ],
+          "correct_option": "B",
+          "explanation": "Safety checks needed for content."
+        },
+        {
+          "id": "q12",
+          "type": "mcq",
+          "question_text": "Temporal chunking during inference trades off:",
+          "code_snippet": null,
+          "options": [
+            "A) Compute for seamlessness",
+            "B) Seam artifacts if overlap/blend absent vs lower memory",
+            "C) Higher LR",
+            "D) CFG removal"
+          ],
+          "correct_option": "B",
+          "explanation": "Chunking saves memory but needs blending."
+        },
+        {
+          "id": "q13",
+          "type": "mcq",
+          "question_text": "To diagnose whether LoRA layers are getting gradients:",
+          "code_snippet": null,
+          "options": [
+            "A) Check token length",
+            "B) Inspect grad norms on LoRA params after backward",
+            "C) Increase batch",
+            "D) Remove EMA"
+          ],
+          "correct_option": "B",
+          "explanation": "Grad norms reveal updates."
+        },
+        {
+          "id": "q14",
+          "type": "mcq",
+          "question_text": "Dynamic thresholding/clamping of x0 during inference helps by:",
+          "code_snippet": null,
+          "options": [
+            "A) Increasing detail",
+            "B) Preventing saturation/overexposure when guidance or steps are aggressive",
+            "C) Changing beta",
+            "D) Speeding decoding"
+          ],
+          "correct_option": "B",
+          "explanation": "Clipping stabilizes extreme predictions."
+        },
+        {
+          "id": "q15",
+          "type": "mcq",
+          "question_text": "Exporting LoRA for TensorRT/ONNX requires:",
+          "code_snippet": null,
+          "options": [
+            "A) No adapters",
+            "B) Either merging into base weights or implementing adapter ops as plugins",
+            "C) Removing VAE",
+            "D) Changing CFG"
+          ],
+          "correct_option": "B",
+          "explanation": "Adapters must be merged or supported by runtime."
+        },
+        {
+          "id": "q16",
+          "type": "mcq",
+          "question_text": "OOM at inference with long T can be mitigated by:",
+          "code_snippet": null,
+          "options": [
+            "A) Increasing batch",
+            "B) Reducing spatial resolution, using chunked inference, attention tiling, or xformers/flash attn",
+            "C) Higher LR",
+            "D) Removing LoRA"
+          ],
+          "correct_option": "B",
+          "explanation": "Memory reduction strategies."
+        },
+        {
+          "id": "q17",
+          "type": "mcq",
+          "question_text": "If LoRA causes color shifts, check:",
+          "code_snippet": null,
+          "options": [
+            "A) VAE scale mismatch or LoRA on shared projections leaking into spatial paths",
+            "B) CFG",
+            "C) Token length",
+            "D) Beta"
+          ],
+          "correct_option": "A",
+          "explanation": "Scale mismatch or shared weights can shift colors."
+        },
+        {
+          "id": "q18",
+          "type": "mcq",
+          "question_text": "To verify no gradient leakage into frozen base:",
+          "code_snippet": null,
+          "options": [
+            "A) Ignore",
+            "B) Check grads are zero on frozen params and optimizer param groups exclude them",
+            "C) Higher LR",
+            "D) Fewer steps"
+          ],
+          "correct_option": "B",
+          "explanation": "Ensure frozen params stay unchanged."
+        },
+        {
+          "id": "q19",
+          "type": "mcq",
+          "question_text": "Inference guidance schedule (strong early, weaker late) can:",
+          "code_snippet": null,
+          "options": [
+            "A) Increase flicker",
+            "B) Reduce overshoot and preserve fine detail",
+            "C) Change VAE",
+            "D) Remove LoRA"
+          ],
+          "correct_option": "B",
+          "explanation": "Annealed guidance balances structure and detail."
+        },
+        {
+          "id": "q20",
+          "type": "mcq",
+          "question_text": "Temporal drift across chunks can be mitigated by:",
+          "code_snippet": null,
+          "options": [
+            "A) No overlap",
+            "B) Overlapping windows with cross-fade or conditioning on previous chunk frames",
+            "C) Higher LR",
+            "D) Removing EMA"
+          ],
+          "correct_option": "B",
+          "explanation": "Overlap/conditioning aligns chunks."
+        }
+      ]
+    },
+    {
+      "section_id": "B",
+      "section_title": "Logic & Implementation Puzzles",
+      "total_questions": 20,
+      "marking_scheme": { "correct": 2.0, "incorrect": -0.5 },
+      "questions": [
+        {
+          "id": "q21",
+          "type": "parsons_problem",
+          "question_text": "Arrange to check LoRA is loaded by comparing outputs.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "out_base = model_base(x, t, cond)" },
+            { "id": "b2", "text": "out_lora = model_lora(x, t, cond)" },
+            { "id": "b3", "text": "return (out_base - out_lora).abs().mean()" },
+            { "id": "b4", "text": "def diff_outputs(model_base, model_lora, x, t, cond):" }
+          ],
+          "correct_order": ["b4", "b1", "b2", "b3"],
+          "explanation": "Compare predictions to confirm effect."
+        },
+        {
+          "id": "q22",
+          "type": "parsons_problem",
+          "question_text": "Arrange to detect gradient leakage into frozen params.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "leaks = [n for n,p in model.named_parameters() if (not p.requires_grad) and p.grad is not None and p.grad.abs().sum()>0]" },
+            { "id": "b2", "text": "return leaks" },
+            { "id": "b3", "text": "def find_leaks(model):" }
+          ],
+          "correct_order": ["b3", "b1", "b2"],
+          "explanation": "Check grads on frozen params."
+        },
+        {
+          "id": "q23",
+          "type": "parsons_problem",
+          "question_text": "Arrange to clamp x0 predictions (dynamic threshold).",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "s = x0.abs().quantile(q, dim=[1,2,3,4], keepdim=True)" },
+            { "id": "b2", "text": "x0 = x0.clamp(-s, s) / s" },
+            { "id": "b3", "text": "return x0" },
+            { "id": "b4", "text": "def dyn_thresh(x0, q=0.995):" }
+          ],
+          "correct_order": ["b4", "b1", "b2", "b3"],
+          "explanation": "Clamp by percentile then normalize."
+        },
+        {
+          "id": "q24",
+          "type": "parsons_problem",
+          "question_text": "Arrange chunked inference with overlap.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "chunks = [frames[i:i+chunk] for i in range(0, T, stride)]" },
+            { "id": "b2", "text": "outs.append(sample_fn(chunk))" },
+            { "id": "b3", "text": "return blend(outs, overlap=stride)" },
+            { "id": "b4", "text": "def chunk_infer(frames, chunk, stride, sample_fn, blend):" },
+            { "id": "b5", "text": "outs = []" }
+          ],
+          "correct_order": ["b4", "b1", "b5", "b2", "b3"],
+          "explanation": "Chunk, sample, blend overlaps."
+        },
+        {
+          "id": "q25",
+          "type": "parsons_problem",
+          "question_text": "Arrange to cap AMP scaler when overflow occurs.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "if overflow: scaler.update(new_scale=max_scale)" },
+            { "id": "b2", "text": "return scaler" },
+            { "id": "b3", "text": "def cap_scale(scaler, overflow, max_scale=2**15):" }
+          ],
+          "correct_order": ["b3", "b1", "b2"],
+          "explanation": "Limit scaler growth."
+        },
+        {
+          "id": "q26",
+          "type": "parsons_problem",
+          "question_text": "Arrange to measure grad norms for LoRA only.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "norm = torch.norm(torch.stack([p.grad.norm() for n,p in model.named_parameters() if 'lora' in n and p.grad is not None]))" },
+            { "id": "b2", "text": "return norm.item()" },
+            { "id": "b3", "text": "def lora_grad_norm(model):" }
+          ],
+          "correct_order": ["b3", "b1", "b2"],
+          "explanation": "Grad norm on LoRA params."
+        },
+        {
+          "id": "q27",
+          "type": "parsons_problem",
+          "question_text": "Arrange to detect VRAM leak over iterations.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "before = torch.cuda.memory_allocated()" },
+            { "id": "b2", "text": "fn()" },
+            { "id": "b3", "text": "after = torch.cuda.memory_allocated()" },
+            { "id": "b4", "text": "return after - before" },
+            { "id": "b5", "text": "def mem_delta(fn):" }
+          ],
+          "correct_order": ["b5", "b1", "b2", "b3", "b4"],
+          "explanation": "Compare allocated memory."
+        },
+        {
+          "id": "q28",
+          "type": "parsons_problem",
+          "question_text": "Arrange to export merged LoRA to ONNX.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "merge_lora_into_model(model, loras)" },
+            { "id": "b2", "text": "torch.onnx.export(model, sample_input, path, opset_version=17)" },
+            { "id": "b3", "text": "def export_onnx(model, loras, sample_input, path):" },
+            { "id": "b4", "text": "return path" }
+          ],
+          "correct_order": ["b3", "b1", "b2", "b4"],
+          "explanation": "Merge then export."
+        },
+        {
+          "id": "q29",
+          "type": "parsons_problem",
+          "question_text": "Arrange to run safety classifier per frame.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "scores = [safety(f) for f in frames]" },
+            { "id": "b2", "text": "return torch.stack(scores)" },
+            { "id": "b3", "text": "def safety_check(frames, safety):" }
+          ],
+          "correct_order": ["b3", "b1", "b2"],
+          "explanation": "Frame-level safety scoring."
+        },
+        {
+          "id": "q30",
+          "type": "parsons_problem",
+          "question_text": "Arrange to anneal guidance weight across steps.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "w_t = w_min + (w_max - w_min) * schedule(t/T)" },
+            { "id": "b2", "text": "return w_t" },
+            { "id": "b3", "text": "def guidance_schedule(t, T, w_min, w_max, schedule):" }
+          ],
+          "correct_order": ["b3", "b1", "b2"],
+          "explanation": "Compute time-dependent guidance."
+        },
+        {
+          "id": "q31",
+          "type": "fill_in_blank",
+          "question_text": "If LoRA output equals base, LoRA may not be ______.",
+          "correct_answer": "applied/loaded",
+          "explanation": "Adapters inactive."
+        },
+        {
+          "id": "q32",
+          "type": "fill_in_blank",
+          "question_text": "Flicker after finetune suggests insufficient ______ signal.",
+          "correct_answer": "temporal",
+          "explanation": "Temporal cues too weak."
+        },
+        {
+          "id": "q33",
+          "type": "fill_in_blank",
+          "question_text": "CFG overshoot causes ______ frames.",
+          "correct_answer": "saturated/blown-out",
+          "explanation": "Over-bright artifacts."
+        },
+        {
+          "id": "q34",
+          "type": "fill_in_blank",
+          "question_text": "VRAM leaks often come from keeping computation ______ alive.",
+          "correct_answer": "graphs",
+          "explanation": "Graphs retained leak memory."
+        },
+        {
+          "id": "q35",
+          "type": "fill_in_blank",
+          "question_text": "Dynamic thresholding clips predicted ______ to stabilize.",
+          "correct_answer": "x0",
+          "explanation": "Clip x0 magnitude."
+        },
+        {
+          "id": "q36",
+          "type": "fill_in_blank",
+          "question_text": "Chunked inference needs ______ and blending to avoid seams.",
+          "correct_answer": "overlap",
+          "explanation": "Overlap windows."
+        },
+        {
+          "id": "q37",
+          "type": "fill_in_blank",
+          "question_text": "Safety checks may run per ______ or per clip.",
+          "correct_answer": "frame",
+          "explanation": "Frame-level safety."
+        },
+        {
+          "id": "q38",
+          "type": "fill_in_blank",
+          "question_text": "Color shifts can stem from VAE scale ______.",
+          "correct_answer": "mismatch",
+          "explanation": "Scale mismatch alters colors."
+        },
+        {
+          "id": "q39",
+          "type": "fill_in_blank",
+          "question_text": "Grad norms on LoRA params should be ______ zero if training.",
+          "correct_answer": "non",
+          "explanation": "Non-zero grads indicate updates."
+        },
+        {
+          "id": "q40",
+          "type": "fill_in_blank",
+          "question_text": "Guidance annealing: strong early, weaker ______ to reduce overshoot.",
+          "correct_answer": "late",
+          "explanation": "Lower w late."
+        }
+      ]
+    },
+    {
+      "section_id": "C",
+      "section_title": "Deep Theory & Coding",
+      "total_questions": 10,
+      "marking_scheme": { "correct": 4.0, "incorrect": -1.0 },
+      "questions": [
+        {
+          "id": "q41",
+          "type": "theory_open_ended",
+          "question_text": "Provide a debugging checklist for temporal LoRA finetune: verifying adapter load, grads, targets, CFG stability, and VAE scaling.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Confirm adapters loaded, requires_grad, optimizer groups",
+              "Check grads on LoRA only, frozen base unchanged",
+              "Validate target (eps/v) and scaling",
+              "Test CFG settings and VAE scale consistency"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q42",
+          "type": "theory_open_ended",
+          "question_text": "Design experiments to measure flicker reduction: with vs without LoRA, varying guidance, metrics (warp error/tLPIPS), and qualitative protocols.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Compare runs with/without LoRA same seeds",
+              "Guidance sweeps, measure temporal metrics",
+              "Visual side-by-sides",
+              "Criteria for improvement"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q43",
+          "type": "theory_open_ended",
+          "question_text": "Explain causes of NaNs in video LoRA training and mitigation (LR, clip, scaler, beta schedule, data).",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Overflow/instability, bad sqrt variance, AMP issues",
+              "Mitigation: lower LR, clip, cap scaler, check beta/alpha_bar positivity",
+              "Validate data ranges",
+              "Small batch repro for isolation"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q44",
+          "type": "theory_open_ended",
+          "question_text": "Discuss deployment options: merged weights vs runtime adapters, chunked generation, and safety filters for video.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Merged for simple deployment; adapters for swapability",
+              "Chunked/overlap inference for long clips",
+              "Safety classifiers/prompt filters",
+              "Trade-offs in latency and flexibility"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q45",
+          "type": "theory_open_ended",
+          "question_text": "Analyze guidance schedules in few-step samplers to prevent overshoot when LoRA strengthens temporal cues.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "High w + few steps risky; anneal w",
+              "Dynamic thresholding/clamping",
+              "Extra steps near t=0",
+              "Empirical tuning with validation"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q46",
+          "type": "theory_open_ended",
+          "question_text": "Explain how to detect and fix color shifts caused by LoRA or VAE scaling in video outputs.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Encode-decode tests for scale",
+              "Check LoRA on shared projections leaking into spatial path",
+              "Adjust scaling or restrict LoRA scope",
+              "Visual/metric checks (color histograms)"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q47",
+          "type": "theory_open_ended",
+          "question_text": "Describe a chunked inference algorithm with overlap and blending to maintain temporal continuity in long videos.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Divide into overlapping windows",
+              "Sample each window, blend overlap (crossfade/weighted)",
+              "Handle conditioning on previous chunk end",
+              "Trade-offs in memory and seams"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q48",
+          "type": "theory_open_ended",
+          "question_text": "Propose logging/monitoring for finetune: loss by timestep, grad norms, memory, sample grids (video strips), safety flags.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Track loss per bucket/timestep",
+              "Grad norms on LoRA",
+              "Memory usage",
+              "Video strips and safety flags",
+              "Alerts on NaN/Inf"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q49",
+          "type": "theory_open_ended",
+          "question_text": "Compare blended CFG schedule vs fixed guidance for long clips with temporal LoRA; discuss stability and fidelity trade-offs.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Blended/annealed w stabilizes late steps",
+              "Fixed w may overshoot or undercondition",
+              "Temporal LoRA amplifies sensitivity",
+              "Empirical guidance selection"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q50",
+          "type": "theory_open_ended",
+          "question_text": "Explain how to validate no-regression on spatial fidelity after temporal LoRA: single-frame tests, LPIPS/PSNR comparisons, and manual inspection.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Generate single frames with/without LoRA same seeds",
+              "Compute LPIPS/PSNR/SSIM",
+              "Visual check for texture drift",
+              "Ensure changes are temporal, not spatial degradation"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        }
+      ]
+    }
+  ]
+}

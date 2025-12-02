@@ -1,0 +1,653 @@
+{
+  "module_name": "01_Temporal_Model_Anatomy",
+  "difficulty_level": "Hard",
+  "rendering_note": "Math tokens appear as plain text (e.g., alpha_bar_t, sqrt(beta(t)), mu, sigma^2). Render them with LaTeX/KaTeX/MathJax in the frontend.",
+  "sections": [
+    {
+      "section_id": "A",
+      "section_title": "Conceptual Recall (MCQs)",
+      "total_questions": 20,
+      "marking_scheme": { "correct": 2.0, "incorrect": -0.5 },
+      "questions": [
+        {
+          "id": "q1",
+          "type": "mcq",
+          "question_text": "In WAN 2.2 (non-MoE) temporal blocks, which projections most directly control cross-frame information flow?",
+          "code_snippet": null,
+          "options": [
+            "A) Q/K/V in temporal self-attention layers",
+            "B) Output conv of VAE decoder",
+            "C) Spatial MLP skip",
+            "D) Timestep embedding MLP"
+          ],
+          "correct_option": "A",
+          "explanation": "Temporal self-attention projections set inter-frame mixing."
+        },
+        {
+          "id": "q2",
+          "type": "mcq",
+          "question_text": "Freezing spatial blocks while finetuning temporal ones preserves:",
+          "code_snippet": null,
+          "options": [
+            "A) Text encoder weights only",
+            "B) Spatial texture priors and patch-level fidelity",
+            "C) Beta schedule",
+            "D) VAE latent scaling"
+          ],
+          "correct_option": "B",
+          "explanation": "Keeping spatial stacks frozen retains pretrained appearance priors."
+        },
+        {
+          "id": "q3",
+          "type": "mcq",
+          "question_text": "Temporal attention typically operates on tokens shaped:",
+          "code_snippet": null,
+          "options": [
+            "A) (B, H*W, d)",
+            "B) (B, T, d) for each spatial site",
+            "C) (B, d, H, W)",
+            "D) (T, H, W, d^2)"
+          ],
+          "correct_option": "B",
+          "explanation": "Temporal attention runs over frame dimension per spatial location."
+        },
+        {
+          "id": "q4",
+          "type": "mcq",
+          "question_text": "In video UNet with factorized attention, temporal blocks are usually placed:",
+          "code_snippet": null,
+          "options": [
+            "A) Only at input",
+            "B) Interleaved after spatial blocks at multiple scales",
+            "C) Only at bottleneck",
+            "D) Only at output head"
+          ],
+          "correct_option": "B",
+          "explanation": "Temporal modules are woven across scales for coherence."
+        },
+        {
+          "id": "q5",
+          "type": "mcq",
+          "question_text": "Temporal positional encodings (e.g., RoPE over time) are applied to:",
+          "code_snippet": null,
+          "options": [
+            "A) Value vectors only",
+            "B) Query/Key for temporal attention",
+            "C) Spatial conv weights",
+            "D) VAE latents"
+          ],
+          "correct_option": "B",
+          "explanation": "RoPE rotates Q/K to encode temporal offsets."
+        },
+        {
+          "id": "q6",
+          "type": "mcq",
+          "question_text": "Channel layouts for 3D conv stems in video VAEs expect input shaped:",
+          "code_snippet": null,
+          "options": [
+            "A) (B, H, W, T, C)",
+            "B) (B, C, T, H, W)",
+            "C) (T, B, C, H, W)",
+            "D) (B, T, H, W)"
+          ],
+          "correct_option": "B",
+          "explanation": "PyTorch Conv3d uses channel-first with T between C and H."
+        },
+        {
+          "id": "q7",
+          "type": "mcq",
+          "question_text": "Temporal downsample strides (e.g., (1,2,2) vs (2,2,2)) control:",
+          "code_snippet": null,
+          "options": [
+            "A) Only spatial memory",
+            "B) Whether frame rate is preserved or halved",
+            "C) Beta schedule length",
+            "D) Text encoder speed"
+          ],
+          "correct_option": "B",
+          "explanation": "Temporal stride decides if T is kept or reduced."
+        },
+        {
+          "id": "q8",
+          "type": "mcq",
+          "question_text": "WAN-like DiT blocks patchify latents with patch size p. Temporal tokens per frame equal:",
+          "code_snippet": null,
+          "options": [
+            "A) (H/p)*(W/p)",
+            "B) H*W",
+            "C) p*H",
+            "D) p^2"
+          ],
+          "correct_option": "A",
+          "explanation": "Non-overlapping patches yield (H/p)*(W/p) tokens per frame."
+        },
+        {
+          "id": "q9",
+          "type": "mcq",
+          "question_text": "Temporal attention logits are scaled by:",
+          "code_snippet": null,
+          "options": [
+            "A) 1 / sqrt(d_k)",
+            "B) 1 / T",
+            "C) 1 / (H*W)",
+            "D) Beta_t"
+          ],
+          "correct_option": "A",
+          "explanation": "Standard attention scaling uses key dimension."
+        },
+        {
+          "id": "q10",
+          "type": "mcq",
+          "question_text": "A quick sanity to locate temporal blocks in a checkpoint is to search parameter names containing:",
+          "code_snippet": null,
+          "options": [
+            "A) \"spatial\"",
+            "B) \"temporal\" or \"time_attn\" or \"t_attn\"",
+            "C) \"vae\"",
+            "D) \"embed\""
+          ],
+          "correct_option": "B",
+          "explanation": "Temporal modules are often tagged explicitly."
+        },
+        {
+          "id": "q11",
+          "type": "mcq",
+          "question_text": "Temporal-only finetune primarily targets which failure mode in pretrained models?",
+          "code_snippet": null,
+          "options": [
+            "A) Color imbalance",
+            "B) Temporal incoherence/flicker",
+            "C) Token truncation",
+            "D) VAE blur"
+          ],
+          "correct_option": "B",
+          "explanation": "Temporal adapters aim to fix inter-frame consistency."
+        },
+        {
+          "id": "q12",
+          "type": "mcq",
+          "question_text": "Relative positional bias for time is usually added to:",
+          "code_snippet": null,
+          "options": [
+            "A) Value vectors",
+            "B) Attention logits for temporal tokens",
+            "C) VAE encoder",
+            "D) Output conv"
+          ],
+          "correct_option": "B",
+          "explanation": "Bias shifts logits based on relative frame offsets."
+        },
+        {
+          "id": "q13",
+          "type": "mcq",
+          "question_text": "Temporal RoPE base frequency is typically:",
+          "code_snippet": null,
+          "options": [
+            "A) Learned per batch",
+            "B) Shared with spatial or set to a fixed base (e.g., 10,000)",
+            "C) Zero",
+            "D) Dependent on LR"
+          ],
+          "correct_option": "B",
+          "explanation": "RoPE uses fixed bases; sometimes shared with spatial."
+        },
+        {
+          "id": "q14",
+          "type": "mcq",
+          "question_text": "Temporal modules often sit at which resolutions in WAN-like stacks?",
+          "code_snippet": null,
+          "options": [
+            "A) Only full-res",
+            "B) Multiple scales, including mid and low-res, to stabilize long-range motion",
+            "C) Only lowest-res",
+            "D) Only text encoder"
+          ],
+          "correct_option": "B",
+          "explanation": "Temporal attn appears across scales to cover various motion ranges."
+        },
+        {
+          "id": "q15",
+          "type": "mcq",
+          "question_text": "Temporal MLPs (if present) primarily:",
+          "code_snippet": null,
+          "options": [
+            "A) Shift frame indices",
+            "B) Mix channel information across time after attention",
+            "C) Downsample H/W",
+            "D) Change beta"
+          ],
+          "correct_option": "B",
+          "explanation": "Feed-forward layers post-attention mix temporal channels."
+        },
+        {
+          "id": "q16",
+          "type": "mcq",
+          "question_text": "To freeze everything except temporal blocks in PyTorch, set requires_grad:",
+          "code_snippet": null,
+          "options": [
+            "A) True for all, rely on optimizer filter",
+            "B) False for all non-temporal parameters, True for temporal",
+            "C) False for all parameters",
+            "D) True for VAE only"
+          ],
+          "correct_option": "B",
+          "explanation": "Explicitly freeze non-temporal parameters."
+        },
+        {
+          "id": "q17",
+          "type": "mcq",
+          "question_text": "WAN 2.2 uses latent scale factor typically around:",
+          "code_snippet": null,
+          "options": [
+            "A) 1.0",
+            "B) 0.18215 (SD-style) unless specified otherwise",
+            "C) 10.0",
+            "D) 0.01"
+          ],
+          "correct_option": "B",
+          "explanation": "Latent VAEs often share SD scaling."
+        },
+        {
+          "id": "q18",
+          "type": "mcq",
+          "question_text": "Temporal block parameter count grows with:",
+          "code_snippet": null,
+          "options": [
+            "A) T only",
+            "B) d_model, head count, and number of temporal layers",
+            "C) Beta schedule",
+            "D) Frame rate"
+          ],
+          "correct_option": "B",
+          "explanation": "More width/heads/layers increases temporal params."
+        },
+        {
+          "id": "q19",
+          "type": "mcq",
+          "question_text": "Temporal stride of 2 early in the encoder risks:",
+          "code_snippet": null,
+          "options": [
+            "A) More detail",
+            "B) Losing fast motion cues by halving T too soon",
+            "C) Reducing VRAM only",
+            "D) Changing VAE scale"
+          ],
+          "correct_option": "B",
+          "explanation": "Early temporal downsample removes high-frequency motion."
+        },
+        {
+          "id": "q20",
+          "type": "mcq",
+          "question_text": "Temporal-to-spatial feature fusion often uses:",
+          "code_snippet": null,
+          "options": [
+            "A) Concatenation and 1x1 conv/linear to mix",
+            "B) Tokenizer",
+            "C) VAE decoder only",
+            "D) Beta schedule"
+          ],
+          "correct_option": "A",
+          "explanation": "Fuse by concat then projection to mix streams."
+        }
+      ]
+    },
+    {
+      "section_id": "B",
+      "section_title": "Logic & Implementation Puzzles",
+      "total_questions": 20,
+      "marking_scheme": { "correct": 2.0, "incorrect": -0.5 },
+      "questions": [
+        {
+          "id": "q21",
+          "type": "parsons_problem",
+          "question_text": "Arrange to select temporal parameters by name for finetune.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "temporal = [p for n,p in model.named_parameters() if 'temp' in n or 'time_attn' in n]" },
+            { "id": "b2", "text": "return temporal" },
+            { "id": "b3", "text": "def get_temporal_params(model):" }
+          ],
+          "correct_order": ["b3", "b1", "b2"],
+          "explanation": "Filter param names for temporal modules."
+        },
+        {
+          "id": "q22",
+          "type": "parsons_problem",
+          "question_text": "Arrange to freeze non-temporal parameters.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "for n,p in model.named_parameters():" },
+            { "id": "b2", "text": "    p.requires_grad = any(k in n for k in ['temp','time_attn'])" },
+            { "id": "b3", "text": "def freeze_non_temporal(model):" },
+            { "id": "b4", "text": "return model" }
+          ],
+          "correct_order": ["b3", "b1", "b2", "b4"],
+          "explanation": "Enable grads only on temporal params."
+        },
+        {
+          "id": "q23",
+          "type": "parsons_problem",
+          "question_text": "Arrange temporal attention reshape.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "x = x.view(B, C, T, H, W)" },
+            { "id": "b2", "text": "tokens = x.permute(0,3,4,2,1).reshape(B*H*W, T, C)" },
+            { "id": "b3", "text": "def to_temporal_tokens(x, B, C, T, H, W):" },
+            { "id": "b4", "text": "return tokens" }
+          ],
+          "correct_order": ["b3", "b1", "b2", "b4"],
+          "explanation": "Flatten spatial, keep time as sequence."
+        },
+        {
+          "id": "q24",
+          "type": "parsons_problem",
+          "question_text": "Arrange RoPE application to temporal Q/K.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "q_rot, k_rot = apply_rope_time(q, k, freqs_t)" },
+            { "id": "b2", "text": "return q_rot, k_rot" },
+            { "id": "b3", "text": "def rope_time(q, k, freqs_t):" }
+          ],
+          "correct_order": ["b3", "b1", "b2"],
+          "explanation": "Rotate temporal Q/K with time frequencies."
+        },
+        {
+          "id": "q25",
+          "type": "parsons_problem",
+          "question_text": "Arrange to identify temporal blocks in a state_dict.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "return [k for k in sd.keys() if 'temp' in k or 'time_attn' in k]" },
+            { "id": "b2", "text": "def list_temporal_keys(sd):" }
+          ],
+          "correct_order": ["b2", "b1"],
+          "explanation": "Filter keys by substring."
+        },
+        {
+          "id": "q26",
+          "type": "parsons_problem",
+          "question_text": "Arrange to compute temporal token count per frame for DiT patch size p.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "tokens_per_frame = (H // p) * (W // p)" },
+            { "id": "b2", "text": "return tokens_per_frame" },
+            { "id": "b3", "text": "def tokens_per_frame(H, W, p):" }
+          ],
+          "correct_order": ["b3", "b1", "b2"],
+          "explanation": "Non-overlapping patches count."
+        },
+        {
+          "id": "q27",
+          "type": "parsons_problem",
+          "question_text": "Arrange to ensure temporal stride is 1 in early encoder conv3d.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "conv = nn.Conv3d(C_in, C_out, kernel_size=3, stride=(1,2,2), padding=1)" },
+            { "id": "b2", "text": "return conv" },
+            { "id": "b3", "text": "def temporal_preserve_conv(C_in, C_out):" }
+          ],
+          "correct_order": ["b3", "b1", "b2"],
+          "explanation": "Use stride 1 on time to preserve T."
+        },
+        {
+          "id": "q28",
+          "type": "parsons_problem",
+          "question_text": "Arrange to add temporal relative positional bias to logits.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "logits = logits + bias[index]" },
+            { "id": "b2", "text": "return logits" },
+            { "id": "b3", "text": "def add_temp_bias(logits, bias, index):" }
+          ],
+          "correct_order": ["b3", "b1", "b2"],
+          "explanation": "Add bias before softmax."
+        },
+        {
+          "id": "q29",
+          "type": "parsons_problem",
+          "question_text": "Arrange to select only temporal parameters for optimizer.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "opt = AdamW(temporal, lr=lr)" },
+            { "id": "b2", "text": "temporal = get_temporal_params(model)" },
+            { "id": "b3", "text": "return opt" },
+            { "id": "b4", "text": "def make_opt(model, lr):" }
+          ],
+          "correct_order": ["b4", "b2", "b1", "b3"],
+          "explanation": "Optimizer on temporal params only."
+        },
+        {
+          "id": "q30",
+          "type": "parsons_problem",
+          "question_text": "Arrange to verify frozen spatial params.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "frozen = [n for n,p in model.named_parameters() if (not p.requires_grad) and ('temp' not in n)]" },
+            { "id": "b2", "text": "return frozen" },
+            { "id": "b3", "text": "def list_frozen_spatial(model):" }
+          ],
+          "correct_order": ["b3", "b1", "b2"],
+          "explanation": "List non-grad params excluding temporal."
+        },
+        {
+          "id": "q31",
+          "type": "fill_in_blank",
+          "question_text": "Temporal attention logits should be scaled by ______.",
+          "correct_answer": "1 / sqrt(d_k)",
+          "explanation": "Standard attention scaling."
+        },
+        {
+          "id": "q32",
+          "type": "fill_in_blank",
+          "question_text": "Temporal stride 1 preserves frame rate; stride 2 halves ______.",
+          "correct_answer": "T",
+          "explanation": "Temporal downsample halves frame count."
+        },
+        {
+          "id": "q33",
+          "type": "fill_in_blank",
+          "question_text": "RoPE over time rotates ______ and keys.",
+          "correct_answer": "queries",
+          "explanation": "RoPE applied to Q/K."
+        },
+        {
+          "id": "q34",
+          "type": "fill_in_blank",
+          "question_text": "Latent scale is often ______ in SD-style VAEs.",
+          "correct_answer": "0.18215",
+          "explanation": "Standard SD scaling."
+        },
+        {
+          "id": "q35",
+          "type": "fill_in_blank",
+          "question_text": "Temporal blocks exist to fix ______ consistency.",
+          "correct_answer": "temporal",
+          "explanation": "Cross-frame coherence."
+        },
+        {
+          "id": "q36",
+          "type": "fill_in_blank",
+          "question_text": "Patch tokens per frame equal (H/p)*(W/______ ).",
+          "correct_answer": "p",
+          "explanation": "Patch grid size."
+        },
+        {
+          "id": "q37",
+          "type": "fill_in_blank",
+          "question_text": "Freeze non-temporal params by setting requires_grad to ______.",
+          "correct_answer": "False",
+          "explanation": "Disable grads."
+        },
+        {
+          "id": "q38",
+          "type": "fill_in_blank",
+          "question_text": "Temporal bias is added to attention ______.",
+          "correct_answer": "logits",
+          "explanation": "Bias shifts logits."
+        },
+        {
+          "id": "q39",
+          "type": "fill_in_blank",
+          "question_text": "Temporal tokens are shaped (B*H*W, ______, C).",
+          "correct_answer": "T",
+          "explanation": "Time is sequence length."
+        },
+        {
+          "id": "q40",
+          "type": "fill_in_blank",
+          "question_text": "3D conv input layout for PyTorch is (B, C, ______, H, W).",
+          "correct_answer": "T",
+          "explanation": "Temporal dimension third."
+        }
+      ]
+    },
+    {
+      "section_id": "C",
+      "section_title": "Deep Theory & Coding",
+      "total_questions": 10,
+      "marking_scheme": { "correct": 4.0, "incorrect": -1.0 },
+      "questions": [
+        {
+          "id": "q41",
+          "type": "theory_open_ended",
+          "question_text": "Map WAN 2.2 (non-MoE) temporal module placement across scales and justify why temporal attention exists at multiple resolutions.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Identify temporal blocks across encoder/decoder scales",
+              "Explain high-res for fine motion, low-res for long-range",
+              "Discuss factorized vs joint attn choice",
+              "VRAM/compute trade-offs"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q42",
+          "type": "theory_open_ended",
+          "question_text": "Explain temporal attention tokenization pipeline (B,C,T,H,W -> temporal tokens) and how positional encodings are applied for time vs space.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Reshape/permute to sequences per spatial site",
+              "Apply temporal RoPE/relative bias on Q/K",
+              "Distinguish spatial vs temporal pos enc",
+              "Reassemble back to feature maps"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q43",
+          "type": "theory_open_ended",
+          "question_text": "Compare temporal downsampling strategies (stride 1 vs 2 vs mixed) and their impact on motion fidelity and compute.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Stride1 preserves motion, higher cost",
+              "Stride2 reduces compute but loses fast motion",
+              "Hybrid designs (early preserve, later downsample)",
+              "Effect on latent frame rate and attention length"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q44",
+          "type": "theory_open_ended",
+          "question_text": "Detail how to isolate temporal parameters in a WAN checkpoint and verify only those require gradients before finetune.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "State_dict inspection for key substrings",
+              "Set requires_grad selectively",
+              "Optimizer param groups limited to temporal",
+              "Check counts/prints to confirm"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q45",
+          "type": "theory_open_ended",
+          "question_text": "Discuss temporal RoPE frequency choices and how incorrect bases can harm long-horizon consistency.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "RoPE base controls relative encoding range",
+              "Too small/large base distorts long T",
+              "Alignment with training T_max",
+              "Impact on extrapolation to longer clips"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q46",
+          "type": "theory_open_ended",
+          "question_text": "Explain why freezing spatial modules while finetuning temporal blocks can preserve texture fidelity but still fix flicker.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Spatial priors remain intact",
+              "Temporal adapters alter inter-frame mixing",
+              "Less risk of catastrophic forgetting",
+              "Targeted parameter efficiency"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q47",
+          "type": "theory_open_ended",
+          "question_text": "Describe how to adapt patch size and token layout in WAN-like DiT when changing input resolution or frame count.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Patchify H/W; token count scales with (H/p)*(W/p)",
+              "Time dimension multiplies tokens",
+              "Pos enc interpolation or RoPE generalizes",
+              "Compute/memory implications"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q48",
+          "type": "theory_open_ended",
+          "question_text": "Provide a checklist to confirm model wiring before finetuning: VAE scaling, temporal block shapes, timestep embeddings, and mask correctness.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Verify latent scale and encode/decode sanity",
+              "Check temporal attn shapes and RoPE/bias application",
+              "Confirm timestep emb broadcast",
+              "Mask shapes (batch, heads, T) correct"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q49",
+          "type": "theory_open_ended",
+          "question_text": "Argue pros/cons of factorized spatial+temporal attention vs full joint attention for high-res video diffusion.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Factorized reduces O((T*S)^2) to manageable cost",
+              "May lose joint interactions",
+              "Full joint captures rich dependencies but huge memory",
+              "Relevance to WAN 2.2 design"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q50",
+          "type": "theory_open_ended",
+          "question_text": "Explain how to verify temporal-only modifications do not alter spatial fidelity: propose ablation tests and metrics.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Generate single-frame outputs with/without temporal adapters",
+              "Compare LPIPS/PSNR for identical seeds",
+              "Visual inspection for texture drift",
+              "Ensure improvements are temporal, not spatial degradation"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        }
+      ]
+    }
+  ]
+}

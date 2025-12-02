@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 
-const TESTS_DIRECTORY = path.join(process.cwd(), 'tests');
+const TESTS_DIRECTORY = path.join(process.cwd(), 'tests_2.0');
 
 export function getAllModuleIds() {
   try {

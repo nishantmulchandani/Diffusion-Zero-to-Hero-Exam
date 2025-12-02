@@ -1,0 +1,666 @@
+{
+  "module_name": "03_Video_LoRA_Finetuning_Pipeline",
+  "difficulty_level": "Hard",
+  "rendering_note": "Math tokens appear as plain text (e.g., alpha_bar_t, sqrt(beta(t)), mu, sigma^2). Render them with LaTeX/KaTeX/MathJax in the frontend.",
+  "sections": [
+    {
+      "section_id": "A",
+      "section_title": "Conceptual Recall (MCQs)",
+      "total_questions": 20,
+      "marking_scheme": { "correct": 2.0, "incorrect": -0.5 },
+      "questions": [
+        {
+          "id": "q1",
+          "type": "mcq",
+          "question_text": "Sampling timesteps during training is usually:",
+          "code_snippet": null,
+          "options": [
+            "A) Sequential from 0 to T",
+            "B) Uniform random or log-SNR weighted across [0, T)",
+            "C) Only t=0",
+            "D) Fixed to midpoints"
+          ],
+          "correct_option": "B",
+          "explanation": "Random timestep sampling covers all noise levels."
+        },
+        {
+          "id": "q2",
+          "type": "mcq",
+          "question_text": "For temporal-only LoRA finetune, optimizer should include:",
+          "code_snippet": null,
+          "options": [
+            "A) All parameters",
+            "B) Only LoRA parameters (and possibly temporal biases), frozen base",
+            "C) VAE only",
+            "D) Text encoder only"
+          ],
+          "correct_option": "B",
+          "explanation": "Restrict training to LoRA/temporal params."
+        },
+        {
+          "id": "q3",
+          "type": "mcq",
+          "question_text": "Gradient accumulation is used to:",
+          "code_snippet": null,
+          "options": [
+            "A) Change beta",
+            "B) Simulate larger batch size when VRAM is limited",
+            "C) Freeze weights",
+            "D) Increase FPS"
+          ],
+          "correct_option": "B",
+          "explanation": "Accumulate microbatch grads then step."
+        },
+        {
+          "id": "q4",
+          "type": "mcq",
+          "question_text": "Training target for WAN-like video diffusion is commonly:",
+          "code_snippet": null,
+          "options": [
+            "A) x0 directly",
+            "B) Epsilon or v (noise target) with MSE",
+            "C) Cross-entropy on tokens",
+            "D) Optical flow"
+          ],
+          "correct_option": "B",
+          "explanation": "Standard noise/v-pred MSE objective."
+        },
+        {
+          "id": "q5",
+          "type": "mcq",
+          "question_text": "Learning rate range for temporal LoRA on large video models is typically:",
+          "code_snippet": null,
+          "options": [
+            "A) 1e-1",
+            "B) 1e-4 to 5e-5 (often lower for stability)",
+            "C) 1.0",
+            "D) 1e-8"
+          ],
+          "correct_option": "B",
+          "explanation": "Small LR stabilizes adapter training."
+        },
+        {
+          "id": "q6",
+          "type": "mcq",
+          "question_text": "EMA for LoRA finetune is:",
+          "code_snippet": null,
+          "options": [
+            "A) Mandatory",
+            "B) Helpful to smooth updates; optional but recommended",
+            "C) Not allowed",
+            "D) Only for VAE"
+          ],
+          "correct_option": "B",
+          "explanation": "EMA improves inference stability."
+        },
+        {
+          "id": "q7",
+          "type": "mcq",
+          "question_text": "Frame sampling strategy for training short clips should consider:",
+          "code_snippet": null,
+          "options": [
+            "A) Only center frames",
+            "B) Random windows, consistent FPS, possibly jitter to increase diversity",
+            "C) T=1 always",
+            "D) Only last frames"
+          ],
+          "correct_option": "B",
+          "explanation": "Random windows and FPS consistency help generalization."
+        },
+        {
+          "id": "q8",
+          "type": "mcq",
+          "question_text": "Loss weighting by 1/SNR aims to:",
+          "code_snippet": null,
+          "options": [
+            "A) Emphasize high-noise timesteps",
+            "B) Emphasize low-noise timesteps",
+            "C) Remove EMA",
+            "D) Change VAE scale"
+          ],
+          "correct_option": "A",
+          "explanation": "Inverse SNR boosts noisy steps."
+        },
+        {
+          "id": "q9",
+          "type": "mcq",
+          "question_text": "Validation during finetune should use:",
+          "code_snippet": null,
+          "options": [
+            "A) Changing prompts each time",
+            "B) Fixed prompts/seeds and a consistent clip length for comparability",
+            "C) No validation",
+            "D) Training data captions only"
+          ],
+          "correct_option": "B",
+          "explanation": "Fixed prompts and seeds allow tracking progress."
+        },
+        {
+          "id": "q10",
+          "type": "mcq",
+          "question_text": "Temporal metrics to monitor include:",
+          "code_snippet": null,
+          "options": [
+            "A) PSNR only",
+            "B) Warp error/tLPIPS across frames",
+            "C) BLEU",
+            "D) Token length"
+          ],
+          "correct_option": "B",
+          "explanation": "Temporal consistency metrics detect flicker."
+        },
+        {
+          "id": "q11",
+          "type": "mcq",
+          "question_text": "CFG token dropout during training helps because:",
+          "code_snippet": null,
+          "options": [
+            "A) It makes tokens longer",
+            "B) It teaches the model the unconditional branch for CFG",
+            "C) It reduces batch",
+            "D) It fixes VAE"
+          ],
+          "correct_option": "B",
+          "explanation": "Dropout trains conditional and unconditional in one model."
+        },
+        {
+          "id": "q12",
+          "type": "mcq",
+          "question_text": "Batching with variable aspect ratios is best handled by:",
+          "code_snippet": null,
+          "options": [
+            "A) Forcing square",
+            "B) Aspect buckets to reduce padding, with bucket embeddings if supported",
+            "C) Ignoring mismatch",
+            "D) Upscaling everything to 4K"
+          ],
+          "correct_option": "B",
+          "explanation": "Bucketing minimizes padding and mismatch."
+        },
+        {
+          "id": "q13",
+          "type": "mcq",
+          "question_text": "VRAM spikes are often from:",
+          "code_snippet": null,
+          "options": [
+            "A) Too few heads",
+            "B) High resolution, large batch, long T, and attention checkpoints disabled",
+            "C) Low LR",
+            "D) Using EMA"
+          ],
+          "correct_option": "B",
+          "explanation": "Memory scales with spatial/time size and attention."
+        },
+        {
+          "id": "q14",
+          "type": "mcq",
+          "question_text": "Microbatching for long clips can be combined with:",
+          "code_snippet": null,
+          "options": [
+            "A) Removing CFG",
+            "B) Gradient accumulation to keep effective batch",
+            "C) Higher LR",
+            "D) Less data"
+          ],
+          "correct_option": "B",
+          "explanation": "Accumulate to preserve effective batch."
+        },
+        {
+          "id": "q15",
+          "type": "mcq",
+          "question_text": "If training videos have inconsistent FPS, the model may learn:",
+          "code_snippet": null,
+          "options": [
+            "A) Stable motion",
+            "B) Jittery or smeared motion cues",
+            "C) Better CFG",
+            "D) Lower VRAM"
+          ],
+          "correct_option": "B",
+          "explanation": "Inconsistent FPS harms motion modeling."
+        },
+        {
+          "id": "q16",
+          "type": "mcq",
+          "question_text": "Optimizer grouping for LoRA usually sets weight decay:",
+          "code_snippet": null,
+          "options": [
+            "A) Same for all",
+            "B) Zero decay on biases/LayerNorm/LoRA, decay on others if any",
+            "C) High decay on LoRA",
+            "D) Negative decay"
+          ],
+          "correct_option": "B",
+          "explanation": "Bias/norm/LoRA often no decay."
+        },
+        {
+          "id": "q17",
+          "type": "mcq",
+          "question_text": "Checkpoint saving for LoRA finetune should include:",
+          "code_snippet": null,
+          "options": [
+            "A) Only LoRA weights",
+            "B) LoRA weights, step, optimizer/scaler, and optionally EMA",
+            "C) VAE only",
+            "D) Beta schedule"
+          ],
+          "correct_option": "B",
+          "explanation": "Save all training state to resume."
+        },
+        {
+          "id": "q18",
+          "type": "mcq",
+          "question_text": "Validation cadence for heavy video models should balance:",
+          "code_snippet": null,
+          "options": [
+            "A) Constant validation every step",
+            "B) Periodic checks (e.g., every N steps/epochs) to manage cost while catching regressions",
+            "C) No validation",
+            "D) Only at end"
+          ],
+          "correct_option": "B",
+          "explanation": "Validation is expensive; run periodically."
+        },
+        {
+          "id": "q19",
+          "type": "mcq",
+          "question_text": "Temporal batch dimension is typically treated in DDP by:",
+          "code_snippet": null,
+          "options": [
+            "A) Splitting T across ranks",
+            "B) Splitting batch samples across ranks, keeping full T per sample",
+            "C) Splitting channels",
+            "D) Splitting heads"
+          ],
+          "correct_option": "B",
+          "explanation": "DDP partitions batch dimension; each rank sees full clips."
+        },
+        {
+          "id": "q20",
+          "type": "mcq",
+          "question_text": "Mixing v-pred and eps-pred losses in training can:",
+          "code_snippet": null,
+          "options": [
+            "A) Always improve",
+            "B) Balance stability; must convert consistently for sampling",
+            "C) Break VAE",
+            "D) Remove need for CFG"
+          ],
+          "correct_option": "B",
+          "explanation": "Mixed targets possible if conversions are consistent."
+        }
+      ]
+    },
+    {
+      "section_id": "B",
+      "section_title": "Logic & Implementation Puzzles",
+      "total_questions": 20,
+      "marking_scheme": { "correct": 2.0, "incorrect": -0.5 },
+      "questions": [
+        {
+          "id": "q21",
+          "type": "parsons_problem",
+          "question_text": "Arrange core training step for temporal LoRA (eps MSE).",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "eps = torch.randn_like(x0)" },
+            { "id": "b2", "text": "t = torch.randint(0, T, (B,), device=x0.device)" },
+            { "id": "b3", "text": "x_t = q_sample(x0, t, eps, alpha_bar)" },
+            { "id": "b4", "text": "pred = model(x_t, t, cond)" },
+            { "id": "b5", "text": "loss = F.mse_loss(pred, eps)" },
+            { "id": "b6", "text": "def train_step(model, x0, cond, alpha_bar):" },
+            { "id": "b7", "text": "return loss" }
+          ],
+          "correct_order": ["b6", "b2", "b1", "b3", "b4", "b5", "b7"],
+          "explanation": "Sample t/eps, add noise, predict, MSE."
+        },
+        {
+          "id": "q22",
+          "type": "parsons_problem",
+          "question_text": "Arrange optimizer for LoRA-only params with no decay on bias/norm/LoRA.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "decay, nodecay = [], []" },
+            { "id": "b2", "text": "for n,p in model.named_parameters():\n    if not p.requires_grad: continue\n    (nodecay if ('bias' in n or 'norm' in n or 'lora' in n) else decay).append(p)" },
+            { "id": "b3", "text": "return AdamW([{\"params\": decay, \"weight_decay\": wd}, {\"params\": nodecay, \"weight_decay\": 0.0}], lr=lr)" },
+            { "id": "b4", "text": "def make_opt(model, lr, wd):" }
+          ],
+          "correct_order": ["b4", "b1", "b2", "b3"],
+          "explanation": "Group params for weight decay."
+        },
+        {
+          "id": "q23",
+          "type": "parsons_problem",
+          "question_text": "Arrange gradient accumulation over microbatches.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "for i,(x0,cond) in enumerate(loader):" },
+            { "id": "b2", "text": "    loss = train_step(model, x0, cond, alpha_bar) / accum" },
+            { "id": "b3", "text": "    loss.backward()" },
+            { "id": "b4", "text": "    if (i+1)%accum==0: opt.step(); opt.zero_grad(); scaler.update()" },
+            { "id": "b5", "text": "def loop(loader, opt, accum, scaler):" }
+          ],
+          "correct_order": ["b5", "b1", "b2", "b3", "b4"],
+          "explanation": "Scale loss, accumulate, step periodically."
+        },
+        {
+          "id": "q24",
+          "type": "parsons_problem",
+          "question_text": "Arrange EMA update after optimizer step.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "for ep,p in zip(ema.parameters(), model.parameters()):" },
+            { "id": "b2", "text": "    ep.data.mul_(decay).add_(p.data, alpha=1-decay)" },
+            { "id": "b3", "text": "def ema_update(model, ema, decay):" },
+            { "id": "b4", "text": "return ema" }
+          ],
+          "correct_order": ["b3", "b1", "b2", "b4"],
+          "explanation": "EMA smoothing."
+        },
+        {
+          "id": "q25",
+          "type": "parsons_problem",
+          "question_text": "Arrange to freeze base params except LoRA.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "for n,p in model.named_parameters():" },
+            { "id": "b2", "text": "    p.requires_grad = ('lora' in n)" },
+            { "id": "b3", "text": "def freeze_base(model):" },
+            { "id": "b4", "text": "return model" }
+          ],
+          "correct_order": ["b3", "b1", "b2", "b4"],
+          "explanation": "Enable grads only on LoRA."
+        },
+        {
+          "id": "q26",
+          "type": "parsons_problem",
+          "question_text": "Arrange to tokenize prompts with dropout for CFG.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "tokens = tokenizer(texts, return_tensors='pt', padding='max_length', max_length=77)" },
+            { "id": "b2", "text": "mask = torch.rand(tokens.input_ids.size(0)) < p" },
+            { "id": "b3", "text": "tokens.input_ids[mask] = null_id" },
+            { "id": "b4", "text": "return tokens" },
+            { "id": "b5", "text": "def tokenize_with_dropout(texts, tokenizer, p, null_id):" }
+          ],
+          "correct_order": ["b5", "b1", "b2", "b3", "b4"],
+          "explanation": "Drop some prompts to null."
+        },
+        {
+          "id": "q27",
+          "type": "parsons_problem",
+          "question_text": "Arrange frame window sampling.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "start = torch.randint(0, T - window + 1, (1,)).item()" },
+            { "id": "b2", "text": "clip = video[:, start:start+window]" },
+            { "id": "b3", "text": "return clip" },
+            { "id": "b4", "text": "def sample_window(video, window, T):" }
+          ],
+          "correct_order": ["b4", "b1", "b2", "b3"],
+          "explanation": "Random window of frames."
+        },
+        {
+          "id": "q28",
+          "type": "parsons_problem",
+          "question_text": "Arrange to compute 1/SNR weights.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "snr = alpha_bar / (1 - alpha_bar)" },
+            { "id": "b2", "text": "w = 1 / snr" },
+            { "id": "b3", "text": "return w" },
+            { "id": "b4", "text": "def inv_snr(alpha_bar):" }
+          ],
+          "correct_order": ["b4", "b1", "b2", "b3"],
+          "explanation": "Inverse SNR weighting."
+        },
+        {
+          "id": "q29",
+          "type": "parsons_problem",
+          "question_text": "Arrange checkpoint save with EMA/opt/scaler.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "torch.save({\"lora\": model.state_dict(), \"ema\": ema.state_dict(), \"opt\": opt.state_dict(), \"scaler\": scaler.state_dict(), \"step\": step}, path)" },
+            { "id": "b2", "text": "def save_ckpt(model, ema, opt, scaler, step, path):" },
+            { "id": "b3", "text": "return path" }
+          ],
+          "correct_order": ["b2", "b1", "b3"],
+          "explanation": "Include all state for resume."
+        },
+        {
+          "id": "q30",
+          "type": "parsons_problem",
+          "question_text": "Arrange validation sampling with fixed seeds.",
+          "scrambled_code_blocks": [
+            { "id": "b1", "text": "torch.manual_seed(seed)" },
+            { "id": "b2", "text": "clips.append(sample_fn(prompt))" },
+            { "id": "b3", "text": "return clips" },
+            { "id": "b4", "text": "def val(prompts, seed, sample_fn):" },
+            { "id": "b5", "text": "clips = []" }
+          ],
+          "correct_order": ["b4", "b1", "b5", "b2", "b3"],
+          "explanation": "Deterministic validation."
+        },
+        {
+          "id": "q31",
+          "type": "fill_in_blank",
+          "question_text": "LoRA finetune optimizer should include only parameters with requires_grad ______.",
+          "correct_answer": "True",
+          "explanation": "Trainable params only."
+        },
+        {
+          "id": "q32",
+          "type": "fill_in_blank",
+          "question_text": "Inverse SNR weighting emphasizes ______-noise steps.",
+          "correct_answer": "high",
+          "explanation": "Weights noisy timesteps."
+        },
+        {
+          "id": "q33",
+          "type": "fill_in_blank",
+          "question_text": "Gradient accumulation simulates larger ______ size.",
+          "correct_answer": "batch",
+          "explanation": "Accumulate grads across microbatches."
+        },
+        {
+          "id": "q34",
+          "type": "fill_in_blank",
+          "question_text": "Validation should use fixed prompts and ______ for comparability.",
+          "correct_answer": "seeds",
+          "explanation": "Determinism across evals."
+        },
+        {
+          "id": "q35",
+          "type": "fill_in_blank",
+          "question_text": "CFG token dropout trains the ______ branch implicitly.",
+          "correct_answer": "unconditional",
+          "explanation": "Drop text to learn unconditional."
+        },
+        {
+          "id": "q36",
+          "type": "fill_in_blank",
+          "question_text": "Batching variable aspect ratios benefits from ______ bucketing.",
+          "correct_answer": "aspect",
+          "explanation": "Buckets reduce padding."
+        },
+        {
+          "id": "q37",
+          "type": "fill_in_blank",
+          "question_text": "EMA smooths noisy updates and often improves ______ quality.",
+          "correct_answer": "inference/sample",
+          "explanation": "EMA weights better at test."
+        },
+        {
+          "id": "q38",
+          "type": "fill_in_blank",
+          "question_text": "Clip windows must have consistent ______ to avoid motion jitter.",
+          "correct_answer": "FPS",
+          "explanation": "Frame rate consistency."
+        },
+        {
+          "id": "q39",
+          "type": "fill_in_blank",
+          "question_text": "LoRA rank/alpha too high can destabilize training; remedies include lowering LR and ______.",
+          "correct_answer": "clipping grads/reducing rank",
+          "explanation": "Reduce update magnitude."
+        },
+        {
+          "id": "q40",
+          "type": "fill_in_blank",
+          "question_text": "Checkpoint should store current training ______ to resume schedules.",
+          "correct_answer": "step",
+          "explanation": "Keep step count."
+        }
+      ]
+    },
+    {
+      "section_id": "C",
+      "section_title": "Deep Theory & Coding",
+      "total_questions": 10,
+      "marking_scheme": { "correct": 4.0, "incorrect": -1.0 },
+      "questions": [
+        {
+          "id": "q41",
+          "type": "theory_open_ended",
+          "question_text": "Write a PyTorch pseudo-code training loop for temporal-only LoRA on WAN: data load, timestep sampling, eps/v target, AMP, grad accumulation, EMA, checkpointing.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Data: video windows, tokenizer with dropout",
+              "Sample t/eps, q_sample, predict, loss (eps or v)",
+              "AMP + scaler, grad accumulation, optimizer on LoRA only",
+              "EMA update, checkpoint contents"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q42",
+          "type": "theory_open_ended",
+          "question_text": "Discuss hyperparameter ranges (LR, rank, alpha, batch/microbatch, steps) for stable temporal LoRA finetune on a 5B video model under 24GB VRAM.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Small LR ~1e-4 to 5e-5, ranks modest",
+              "Microbatching, grad accumulation",
+              "Step count expectations, warmup",
+              "Trade-offs with VRAM and throughput"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q43",
+          "type": "theory_open_ended",
+          "question_text": "Explain why consistent FPS and window length matter in training and how to normalize clips from mixed sources.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Temporal patterns tied to FPS",
+              "Normalize by resampling/interpolating to target FPS",
+              "Window sampling strategy",
+              "Effect on motion learning"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q44",
+          "type": "theory_open_ended",
+          "question_text": "Design validation protocol for temporal LoRA: prompts, seeds, metrics (warp error/tLPIPS), qualitative checks, cadence.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Fixed prompt set, fixed seeds",
+              "Temporal metrics and visual grids",
+              "Cadence balancing cost",
+              "Detect flicker/regressions"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q45",
+          "type": "theory_open_ended",
+          "question_text": "Explain optimizer grouping (decay vs no-decay) for LoRA finetune and why biases/LayerNorm/LoRA often have zero decay.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Weight decay applied to main weights",
+              "Bias/Norm/LoRA sensitive to decay",
+              "Group params accordingly",
+              "Effect on stability"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q46",
+          "type": "theory_open_ended",
+          "question_text": "Compare eps-pred vs v-pred training for video LoRA: loss scaling, stability, and conversion at inference.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "v has more uniform scale, eps standard",
+              "Loss weighting differences (SNR)",
+              "Need consistent conversion for sampling",
+              "Empirical stability notes"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q47",
+          "type": "theory_open_ended",
+          "question_text": "Outline how to integrate aspect buckets and bucket embeddings into the training loop for variable resolution videos.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Bucket assignment by aspect",
+              "Resize/pad to bucket size",
+              "Optional bucket id embedding added to t_emb",
+              "Effects on generalization"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q48",
+          "type": "theory_open_ended",
+          "question_text": "Explain memory bottlenecks in video LoRA training and mitigation (xformers/flash attn, checkpointing, microbatch+accum, mixed precision).",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Memory grows with H*W*T and attention",
+              "Use memory-efficient attention, checkpointing",
+              "Microbatch, grad accumulation",
+              "AMP/bf16 to reduce footprint"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q49",
+          "type": "theory_open_ended",
+          "question_text": "Propose a curriculum for timestep sampling (uniform vs log-SNR) and argue when to switch during finetune.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Uniform baseline, log-SNR to emphasize noisy steps",
+              "Potential switch after stabilization",
+              "Effect on gradients and temporal learning",
+              "Empirical tuning"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        },
+        {
+          "id": "q50",
+          "type": "theory_open_ended",
+          "question_text": "Design checkpointing strategy (frequency, contents, naming) for large video LoRA runs to avoid data loss and support rollback.",
+          "ai_grading_rubric": {
+            "key_points_required": [
+              "Save model/LoRA, EMA, optimizer, scaler, step",
+              "Frequency trade-off vs IO",
+              "Versioned names with step/val metric",
+              "Keep best checkpoints and recent ones"
+            ],
+            "max_score": 4,
+            "min_score": -1
+          }
+        }
+      ]
+    }
+  ]
+}
