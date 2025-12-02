@@ -35,12 +35,12 @@ export default function HomePageContent({ modules }) {
                             <Sparkles className="w-3 h-3 mr-2" /> AI-Native Examination Platform
                         </div>
                         <h1 className="text-7xl font-black tracking-tighter mb-6">
-                            <span className="text-white">Diffusion</span>
-                            <span className="text-gradient ml-4">Mastery</span>
+                            <span className="text-white">WAN Architecture</span>
+                            <span className="text-gradient ml-4">& LoRA Engineering</span>
                         </h1>
                         <p className="text-xl text-zinc-400 max-w-2xl mx-auto leading-relaxed">
-                            The gold standard for Deep Learning Engineers. <br />
-                            Master the mathematics and implementation of Generative AI through rigor.
+                            The gold standard for Video Model Engineering. <br />
+                            Master the mathematics and implementation of WAN-2.1, Flow Matching, and Temporal LoRA.
                         </p>
                     </motion.div>
 
